@@ -109,7 +109,7 @@ export function SuppliersView() {
           {(["ALL","APPROVED","PENDING","BLACKLISTED"] as const).map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={cn("px-3 py-1.5 text-[12px] font-medium transition-all",
-                statusFilter === s ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"
+                statusFilter === s ? "bg-sky-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"
               )}>
               {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()} ({counts[s]})
             </button>
