@@ -37,7 +37,7 @@ const TOP_LABELS: Partial<Record<AppView, string>> = {
 };
 
 export default function Home() {
-  const [view, setView]     = useState<AppView>("dashboard");
+  const [view, setView]     = useState<AppView>("events");
   const [events, setEvents] = useState<RFXEvent[]>(INITIAL_EVENTS);
   const [activeEvent, setActiveEvent] = useState<ActiveEvent>({ ...INITIAL_ACTIVE });
   const [responses,   setResponses]   = useState<SupplierResponse[]>(INITIAL_RESPONSES.map(r => ({ ...r })));

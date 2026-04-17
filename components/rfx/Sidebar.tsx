@@ -2,10 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { AppView } from "@/lib/rfx-types";
-import {
-  LayoutGrid, Calendar, FileText, Users, LayoutTemplate,
-  BarChart2, Settings, ArrowRight,
-} from "lucide-react";
+import { Calendar, FileText, ArrowRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NavItem {
@@ -13,20 +10,12 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   badge?: number;
-  view: AppView | "dash";
+  view: AppView;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  // { id: "dashboard", label: "Dashboard", icon: <LayoutGrid size={15} />, view: "dashboard" },
-  { id: "events", label: "Events", icon: <Calendar size={15} />, badge: 3, view: "events" },
+  { id: "events",    label: "Events",    icon: <Calendar size={15} />, badge: 3, view: "events" },
   { id: "responses", label: "Responses", icon: <FileText size={15} />, badge: 5, view: "responses" },
-  // { id: "suppliers", label: "Suppliers", icon: <Users size={15} />, view: "suppliers" },
-  // { id: "templates", label: "Templates", icon: <LayoutTemplate size={15} />, view: "templates" },
-];
-
-const CONFIG_ITEMS: NavItem[] = [
-  { id: "reports", label: "Reports", icon: <BarChart2 size={15} />, view: "reports" },
-  { id: "settings", label: "Settings", icon: <Settings size={15} />, view: "settings" },
 ];
 
 interface SidebarProps {
@@ -36,13 +25,8 @@ interface SidebarProps {
 
 export function Sidebar({ activeView, onNavigate }: SidebarProps) {
   const isActive = (item: NavItem) => {
-    if (item.id === "dashboard") return activeView === "dashboard";
-    if (item.id === "events") return activeView === "events" || activeView === "wizard";
+    if (item.id === "events")    return activeView === "events" || activeView === "wizard";
     if (item.id === "responses") return ["responses", "eval", "clarif", "award"].includes(activeView);
-    if (item.id === "suppliers") return activeView === "suppliers";
-    if (item.id === "templates") return activeView === "templates";
-    if (item.id === "reports") return activeView === "reports";
-    if (item.id === "settings") return activeView === "settings";
     return false;
   };
 
@@ -67,7 +51,7 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.view as AppView)}
+              onClick={() => onNavigate(item.view)}
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg text-[13px] transition-all cursor-pointer",
                 "text-white/55 hover:bg-white/[0.08] hover:text-white/85",
@@ -82,22 +66,6 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
                   {item.badge}
                 </span>
               )}
-            </button>
-          ))}
-
-          <div className="px-5 py-3 mt-2 text-[10px] font-semibold tracking-[0.1em] text-white/30 uppercase">Config</div>
-          {CONFIG_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.view as AppView)}
-              className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg text-[13px] transition-all cursor-pointer",
-                "text-white/55 hover:bg-white/[0.08] hover:text-white/85"
-              )}
-              style={{ width: "calc(100% - 12px)" }}
-            >
-              {item.icon}
-              <span className="flex-1 text-left">{item.label}</span>
             </button>
           ))}
         </div>
