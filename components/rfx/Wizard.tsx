@@ -22,6 +22,15 @@ interface WizardProps {
 }
 
 const QTYPES = ["TEXT", "NUMERIC", "BOOLEAN", "SINGLE_CHOICE", "MULTI_CHOICE", "FILE_UPLOAD", "DATE"];
+const QTYPE_LABELS: Record<string, string> = {
+  TEXT: "Text",
+  NUMERIC: "Numeric",
+  BOOLEAN: "Boolean",
+  SINGLE_CHOICE: "Single Choice",
+  MULTI_CHOICE: "Multi Choice",
+  FILE_UPLOAD: "File Upload",
+  DATE: "Date",
+};
 const SEC_TYPES = ["GENERAL", "TECHNICAL", "COMPLIANCE", "HSE", "FINANCIAL"];
 
 const TOGGLE_DEFS: Record<string, { label: string; sub: string }> = {
@@ -498,7 +507,7 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                   onChange={e => updateQ(si, qi, "qtype", e.target.value)}
                   className="h-8 px-2 border border-slate-200 rounded-md text-[11px] bg-white"
                 >
-                  {QTYPES.map(t => <option key={t}>{t}</option>)}
+                  {QTYPES.map(t => <option key={t} value={t}>{QTYPE_LABELS[t]}</option>)}
                 </select>
                 <label className="flex items-center gap-1.5 text-[11px] text-slate-500 cursor-pointer mt-1.5">
                   <Checkbox checked={q.mandatory} onCheckedChange={v => updateQ(si, qi, "mandatory", !!v)} />
