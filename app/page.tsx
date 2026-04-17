@@ -1,65 +1,178 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { Sidebar } from "@/components/rfx/Sidebar";
+import { Dashboard } from "@/components/rfx/Dashboard";
+import { EventsList } from "@/components/rfx/EventsList";
+import { Wizard } from "@/components/rfx/Wizard";
+import { ResponsesView } from "@/components/rfx/ResponsesView";
+import { SuppliersView } from "@/components/rfx/SuppliersView";
+import { TemplatesView } from "@/components/rfx/TemplatesView";
+import {
+  EVENTS_LIST as INITIAL_EVENTS,
+  ACTIVE_EVENT as INITIAL_ACTIVE,
+  RESPONSES as INITIAL_RESPONSES,
+  CLARIFICATIONS as INITIAL_CLARIFS,
+  CRITERIA,
+} from "@/lib/rfx-data";
+import type {
+  AppView, RFXEvent, ActiveEvent, SupplierResponse, Clarification, WizState,
+} from "@/lib/rfx-types";
+import { CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const TOP_LABELS: Partial<Record<AppView, string>> = {
+  dashboard: "Dashboard",
+  events:    "Events",
+  wizard:    "Create event",
+  responses: "",          // set dynamically
+  eval:      "Evaluate",
+  clarif:    "Q&A / Clarifications",
+  award:     "Award contract",
+  published: "Published",
+  suppliers: "Suppliers",
+  templates: "Templates",
+  reports:   "Reports",
+  settings:  "Settings",
+};
 
 export default function Home() {
+  const [view, setView]     = useState<AppView>("dashboard");
+  const [events, setEvents] = useState<RFXEvent[]>(INITIAL_EVENTS);
+  const [activeEvent, setActiveEvent] = useState<ActiveEvent>({ ...INITIAL_ACTIVE });
+  const [responses,   setResponses]   = useState<SupplierResponse[]>(INITIAL_RESPONSES.map(r => ({ ...r })));
+  const [clarifications, setClarifications] = useState<Clarification[]>(INITIAL_CLARIFS.map(c => ({ ...c })));
+  const [publishedType,  setPublishedType]  = useState("");
+  const [publishedCount, setPublishedCount] = useState(0);
+
+  function navigate(v: AppView) { setView(v); }
+
+  function handlePublish(wiz: WizState) {
+    setEvents(ev => [{
+      id: Date.now(),
+      number: `${wiz.type}-2025-0019`,
+      type: wiz.type,
+      title: "Annual Decorative Lighting Contract",
+      status: "PUBLISHED",
+      deadline: "30 Sep 2025",
+      responses: 0,
+      qualified: 0,
+    }, ...ev]);
+    setPublishedType(wiz.type);
+    setPublishedCount(wiz.participants.length);
+    setView("published");
+  }
+
+  function handleUpdateEvent(patch: Partial<ActiveEvent>) {
+    setActiveEvent(prev => ({ ...prev, ...patch }));
+    if (patch.status) {
+      setEvents(ev => ev.map(e => e.id === activeEvent.id ? { ...e, status: patch.status! } : e));
+    }
+  }
+
+  /* breadcrumb label */
+  const pageLabel = view === "responses" ? activeEvent.number : (TOP_LABELS[view] ?? view);
+
+  /* views that live under Events in the breadcrumb */
+  const underEvents = ["wizard", "responses", "eval", "award", "clarif"].includes(view);
+  /* views that live under Responses in the breadcrumb */
+  const underResponses = ["eval", "award"].includes(view);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="flex h-screen overflow-hidden bg-[#f0f4f8]">
+      <Sidebar activeView={view} onNavigate={navigate} />
+
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Topbar */}
+        <header className="h-[54px] bg-white border-b border-slate-200 flex items-center px-7 flex-shrink-0 gap-1.5">
+          <nav className="flex items-center gap-1.5 text-[13px] text-slate-500">
+            {underEvents && (
+              <>
+                <button onClick={() => navigate("events")} className="hover:text-sky-600 transition-colors">Events</button>
+                <span className="text-slate-300">›</span>
+              </>
+            )}
+            {underResponses && (
+              <>
+                <button onClick={() => navigate("responses")} className="hover:text-sky-600 transition-colors">{activeEvent.number}</button>
+                <span className="text-slate-300">›</span>
+              </>
+            )}
+            <strong className="text-slate-800 font-medium">{pageLabel}</strong>
+          </nav>
+        </header>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+
+          {view === "dashboard" && (
+            <Dashboard events={events} onNavigate={navigate} />
+          )}
+
+          {view === "events" && (
+            <EventsList
+              events={events}
+              onCreateEvent={() => navigate("wizard")}
+              onOpenEvent={() => navigate("responses")}
+              onEditDraft={() => navigate("wizard")}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          )}
+
+          {view === "wizard" && (
+            <Wizard onNavigate={navigate} onPublish={handlePublish} />
+          )}
+
+          {(view === "responses" || view === "eval" || view === "award") && (
+            <ResponsesView
+              event={activeEvent}
+              responses={responses}
+              clarifications={clarifications}
+              criteria={CRITERIA}
+              onNavigate={navigate}
+              onUpdateEvent={handleUpdateEvent}
+              onUpdateResponses={setResponses}
+              onUpdateClarifications={setClarifications}
+            />
+          )}
+
+          {view === "suppliers" && <SuppliersView />}
+
+          {view === "templates" && (
+            <TemplatesView onUseTemplate={() => navigate("wizard")} />
+          )}
+
+          {view === "published" && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center max-w-sm">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
+                  <CheckCircle2 size={32} className="text-emerald-600" />
+                </div>
+                <h2 className="text-[20px] font-bold text-slate-900 mb-1.5">Event published!</h2>
+                <p className="text-[14px] text-slate-500 mb-1">{publishedType}-2025-0019 created successfully.</p>
+                <p className="text-[13px] text-slate-400 mb-6">{publishedCount} suppliers have been notified.</p>
+                <div className="flex gap-2.5 justify-center">
+                  <Button onClick={() => navigate("events")}>Back to events</Button>
+                  <Button variant="outline" onClick={() => navigate("wizard")}>Create another event</Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stub pages for Reports / Settings */}
+          {(view === "reports" || view === "settings") && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <p className="text-[14px] font-medium text-slate-600 capitalize">{view}</p>
+                <p className="text-[13px] text-slate-400 mt-1">Available in full build.</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate("dashboard")}>
+                  Back to dashboard
+                </Button>
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
     </div>
   );
 }

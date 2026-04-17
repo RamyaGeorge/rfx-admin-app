@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add badge tabs card table separator scroll-area tooltip)",
+      "Bash(npx shadcn@latest add checkbox label switch)"
     ]
   }
 }
