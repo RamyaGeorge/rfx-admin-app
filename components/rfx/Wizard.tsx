@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -331,10 +332,10 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
       <Card>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Submission deadline" required>
-            <Input type="date" defaultValue="2026-09-30" />
+            <DateTimePicker defaultValue="2026-09-30T00:00" />
           </Field>
           <Field label="Clarification deadline">
-            <Input type="date" defaultValue="2026-09-15" />
+            <DateTimePicker defaultValue="2026-09-15T00:00" />
           </Field>
         </div>
       </Card>
@@ -445,7 +446,7 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                     </select>
                   </td>
                   {cfg.showPricing && <td className="px-2.5 py-2"><Input value={it.target_price} onChange={e => updateItem(i, "target_price", e.target.value)} className="h-8 text-[12px] w-24" placeholder="0.00" /></td>}
-                  <td className="px-2.5 py-2"><Input value={it.required_by} onChange={e => updateItem(i, "required_by", e.target.value)} type="date" className="h-8 text-[12px]" /></td>
+                  <td className="px-2.5 py-2"><DateTimePicker value={it.required_by} onChange={val => updateItem(i, "required_by", val)} className="h-8 text-[12px]" /></td>
                   <td className="px-2.5 py-2">
                     <button onClick={() => delItem(i)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all">
                       <X size={13} />
