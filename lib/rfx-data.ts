@@ -75,6 +75,183 @@ export const ACTIVE_EVENT: ActiveEvent = {
   min_qual_score: 70,
 };
 
+export const RESPONSES_BY_EVENT: Record<number, SupplierResponse[]> = {
+  // Event 1 — RFQ-2025-0018 (UNDER_EVALUATION) — defined below as RESPONSES
+  1: [],
+  // Event 2 — RFP-2025-0017 (OPEN)
+  2: [
+    {
+      id: 101,
+      supplier: "FurniWorld Pvt Ltd",
+      country: "IN",
+      submitted: "18 Oct 2025, 10:30",
+      status: "SUBMITTED",
+      tech_env: "OPENED",
+      fin_env: "SEALED",
+      tech_score: 88.0,
+      fin_env_amount: null,
+      rank: null,
+      is_l1: false,
+      is_disqualified: false,
+      items: [
+        { code: "FRN-001", desc: "Executive Office Chair", qty: 50, unit: "PCS", unit_price: null, total: null },
+        { code: "FRN-002", desc: "Standing Desk 160x80cm", qty: 30, unit: "PCS", unit_price: null, total: null },
+      ],
+      answers: [
+        { section: "Company Profile", q: "Years in business", type: "NUMERIC", val: "15", score: null },
+        { section: "Technical", q: "ISO 9001 Certified?", type: "BOOLEAN", val: "Yes", score: 100 },
+        { section: "Technical", q: "Delivery lead time (weeks)", type: "NUMERIC", val: "6", score: 85 },
+      ],
+    },
+    {
+      id: 102,
+      supplier: "OfficeZone Solutions",
+      country: "IN",
+      submitted: "19 Oct 2025, 15:00",
+      status: "SUBMITTED",
+      tech_env: "OPENED",
+      fin_env: "SEALED",
+      tech_score: 74.5,
+      fin_env_amount: null,
+      rank: null,
+      is_l1: false,
+      is_disqualified: false,
+      items: [
+        { code: "FRN-001", desc: "Executive Office Chair", qty: 50, unit: "PCS", unit_price: null, total: null },
+      ],
+      answers: [
+        { section: "Company Profile", q: "Years in business", type: "NUMERIC", val: "8", score: null },
+        { section: "Technical", q: "ISO 9001 Certified?", type: "BOOLEAN", val: "No", score: 0 },
+        { section: "Technical", q: "Delivery lead time (weeks)", type: "NUMERIC", val: "10", score: 70 },
+      ],
+    },
+  ],
+  // Event 3 — RFI-2025-0016 (PUBLISHED) — market survey responses
+  3: [
+    {
+      id: 301,
+      supplier: "Tata Power EV Ltd",
+      country: "IN",
+      submitted: "10 Oct 2025, 09:15",
+      status: "SUBMITTED",
+      tech_env: "OPENED",
+      fin_env: "SEALED",
+      tech_score: null,
+      fin_env_amount: null,
+      rank: null,
+      is_l1: false,
+      is_disqualified: false,
+      items: [],
+      answers: [
+        { section: "Market Information", q: "Current EV charger deployment capacity (units/month)", type: "NUMERIC", val: "500", score: null },
+        { section: "Market Information", q: "Do you offer turnkey installation services?", type: "BOOLEAN", val: "Yes", score: null },
+        { section: "Market Information", q: "Supported charging standards", type: "SINGLE_CHOICE", val: "CCS2, CHAdeMO, Type 2", score: null },
+        { section: "Company Profile", q: "Years in EV infrastructure", type: "NUMERIC", val: "6", score: null },
+      ],
+    },
+    {
+      id: 302,
+      supplier: "Greaves ElectrX",
+      country: "IN",
+      submitted: "11 Oct 2025, 14:30",
+      status: "SUBMITTED",
+      tech_env: "OPENED",
+      fin_env: "SEALED",
+      tech_score: null,
+      fin_env_amount: null,
+      rank: null,
+      is_l1: false,
+      is_disqualified: false,
+      items: [],
+      answers: [
+        { section: "Market Information", q: "Current EV charger deployment capacity (units/month)", type: "NUMERIC", val: "300", score: null },
+        { section: "Market Information", q: "Do you offer turnkey installation services?", type: "BOOLEAN", val: "No", score: null },
+        { section: "Market Information", q: "Supported charging standards", type: "SINGLE_CHOICE", val: "Type 2 only", score: null },
+        { section: "Company Profile", q: "Years in EV infrastructure", type: "NUMERIC", val: "3", score: null },
+      ],
+    },
+    {
+      id: 303,
+      supplier: "Charge+Zone Network",
+      country: "IN",
+      submitted: "13 Oct 2025, 11:00",
+      status: "SUBMITTED",
+      tech_env: "OPENED",
+      fin_env: "SEALED",
+      tech_score: null,
+      fin_env_amount: null,
+      rank: null,
+      is_l1: false,
+      is_disqualified: false,
+      items: [],
+      answers: [
+        { section: "Market Information", q: "Current EV charger deployment capacity (units/month)", type: "NUMERIC", val: "1200", score: null },
+        { section: "Market Information", q: "Do you offer turnkey installation services?", type: "BOOLEAN", val: "Yes", score: null },
+        { section: "Market Information", q: "Supported charging standards", type: "SINGLE_CHOICE", val: "CCS2, Type 2, AC Slow", score: null },
+        { section: "Company Profile", q: "Years in EV infrastructure", type: "NUMERIC", val: "9", score: null },
+      ],
+    },
+  ],
+  // Event 4 — DRAFT — no responses
+  4: [],
+  // Event 5 — DRAFT — no responses
+  5: [],
+};
+
+export const CLARIFICATIONS_BY_EVENT: Record<number, Clarification[]> = {
+  1: [], // filled below from CLARIFICATIONS
+  2: [
+    {
+      id: 201,
+      q: "Can we supply ergonomic chairs as a substitute for executive chairs?",
+      a: "Yes, ergonomic alternatives are acceptable if they meet the specifications in Annex B.",
+      asked: "10 Oct 2025",
+      answered: "11 Oct 2025",
+      supplier: "FurniWorld Pvt Ltd",
+      anon: false,
+      published: true,
+      status: "ANSWERED",
+    },
+    {
+      id: 202,
+      q: "Is installation included in the scope?",
+      a: null,
+      asked: "12 Oct 2025",
+      answered: null,
+      supplier: "OfficeZone Solutions",
+      anon: false,
+      published: false,
+      status: "PENDING",
+    },
+  ],
+  3: [
+    {
+      id: 301,
+      q: "Is a formal letter of intent required to participate in this RFI?",
+      a: "No formal letter required. Simply submit your responses via the portal.",
+      asked: "05 Oct 2025",
+      answered: "06 Oct 2025",
+      supplier: "Tata Power EV Ltd",
+      anon: false,
+      published: true,
+      status: "ANSWERED",
+    },
+    {
+      id: 302,
+      q: "Will the information submitted be kept confidential?",
+      a: null,
+      asked: "08 Oct 2025",
+      answered: null,
+      supplier: "Greaves ElectrX",
+      anon: true,
+      published: false,
+      status: "PENDING",
+    },
+  ],
+  4: [],
+  5: [],
+};
+
 export const RESPONSES: SupplierResponse[] = [
   {
     id: 1,
@@ -94,11 +271,16 @@ export const RESPONSES: SupplierResponse[] = [
       { code: "LT-LED-002", desc: "LED Retrofit Bulb 10W E27", qty: 2000, unit: "PCS", unit_price: null, total: null },
     ],
     answers: [
-      { section: "Technical Compliance", q: "Upload Material Certification (IS 9900:2002)", type: "FILE_UPLOAD", val: "IS9900_ABC.pdf", score: null },
-      { section: "Technical Compliance", q: "Warranty Period (months)", type: "NUMERIC", val: "24", score: 90 },
-      { section: "Technical Compliance", q: "Manufacturing facility location", type: "SINGLE_CHOICE", val: "India (domestic)", score: 88 },
-      { section: "Company Profile", q: "Years in business", type: "NUMERIC", val: "18", score: null },
-      { section: "Company Profile", q: "ISO 9001:2015 Certified?", type: "BOOLEAN", val: "Yes", score: 100 },
+      { section: "Technical Compliance", q: "Do all luminaires meet IP44 or higher ingress protection rating?", type: "BOOLEAN", val: "Yes — IP65 rated across full range", score: 95 },
+      { section: "Technical Compliance", q: "Warranty period offered on luminaires (months)", type: "NUMERIC", val: "24 months (extendable to 36 on request)", score: 90 },
+      { section: "Technical Compliance", q: "Primary manufacturing facility location", type: "SINGLE_CHOICE", val: "India – Pune (ISO-certified plant)", score: 88 },
+      { section: "Technical Compliance", q: "Upload BIS / IS 9900:2002 Material Certification", type: "FILE_UPLOAD", val: "BIS_Cert_ABC_IS9900.pdf", score: null },
+      { section: "Quality & Compliance", q: "Is your organisation ISO 9001:2015 certified? Upload certificate.", type: "FILE_UPLOAD", val: "ISO9001_ABC_2025.pdf", score: 100 },
+      { section: "Quality & Compliance", q: "Annual financial turnover for last 3 years (₹ Cr)", type: "NUMERIC", val: "FY23: ₹4.2 Cr | FY24: ₹5.1 Cr | FY25: ₹6.3 Cr", score: null },
+      { section: "Quality & Compliance", q: "Provide at least 2 references for similar projects (value ≥ ₹50L) executed in last 5 years", type: "FILE_UPLOAD", val: "Project_References_ABC.pdf", score: 90 },
+      { section: "Company Profile", q: "Number of years in the decorative and industrial lighting business", type: "NUMERIC", val: "18 years", score: 92 },
+      { section: "Company Profile", q: "Describe your after-sales service network in India (locations, response SLA)", type: "TEXT", val: "12 service centres across India; 48-hour on-site response SLA; dedicated account manager assigned.", score: 88 },
+      { section: "Company Profile", q: "Estimated delivery lead time from purchase order (weeks)", type: "NUMERIC", val: "6 weeks for standard items; 8 weeks for custom brass finish", score: 85 },
     ],
   },
   {
@@ -119,11 +301,16 @@ export const RESPONSES: SupplierResponse[] = [
       { code: "LT-LED-002", desc: "LED Retrofit Bulb 10W E27", qty: 2000, unit: "PCS", unit_price: null, total: null },
     ],
     answers: [
-      { section: "Technical Compliance", q: "Upload Material Certification", type: "FILE_UPLOAD", val: "Cert_GL.pdf", score: null },
-      { section: "Technical Compliance", q: "Warranty Period (months)", type: "NUMERIC", val: "18", score: 75 },
-      { section: "Technical Compliance", q: "Manufacturing facility location", type: "SINGLE_CHOICE", val: "Europe", score: 70 },
-      { section: "Company Profile", q: "Years in business", type: "NUMERIC", val: "12", score: null },
-      { section: "Company Profile", q: "ISO 9001:2015 Certified?", type: "BOOLEAN", val: "Yes", score: 100 },
+      { section: "Technical Compliance", q: "Do all luminaires meet IP44 or higher ingress protection rating?", type: "BOOLEAN", val: "Yes — IP44 rated (standard EU directive)", score: 80 },
+      { section: "Technical Compliance", q: "Warranty period offered on luminaires (months)", type: "NUMERIC", val: "18 months", score: 75 },
+      { section: "Technical Compliance", q: "Primary manufacturing facility location", type: "SINGLE_CHOICE", val: "Germany – Hamburg (DIN EN ISO plant)", score: 70 },
+      { section: "Technical Compliance", q: "Upload BIS / IS 9900:2002 Material Certification", type: "FILE_UPLOAD", val: "GlobeLux_CE_Equiv_Cert.pdf", score: null },
+      { section: "Quality & Compliance", q: "Is your organisation ISO 9001:2015 certified? Upload certificate.", type: "FILE_UPLOAD", val: "ISO9001_GlobeLux_2024.pdf", score: 100 },
+      { section: "Quality & Compliance", q: "Annual financial turnover for last 3 years (₹ Cr)", type: "NUMERIC", val: "FY23: €3.8M | FY24: €4.5M | FY25: €5.2M", score: null },
+      { section: "Quality & Compliance", q: "Provide at least 2 references for similar projects (value ≥ ₹50L) executed in last 5 years", type: "FILE_UPLOAD", val: "GlobeLux_References_EU_IN.pdf", score: 75 },
+      { section: "Company Profile", q: "Number of years in the decorative and industrial lighting business", type: "NUMERIC", val: "12 years", score: 78 },
+      { section: "Company Profile", q: "Describe your after-sales service network in India (locations, response SLA)", type: "TEXT", val: "Authorised service partner in Mumbai and Delhi; 72-hour response SLA; spare parts stocked locally.", score: 72 },
+      { section: "Company Profile", q: "Estimated delivery lead time from purchase order (weeks)", type: "NUMERIC", val: "10 weeks (ocean freight from EU)", score: 65 },
     ],
   },
   {
@@ -144,9 +331,16 @@ export const RESPONSES: SupplierResponse[] = [
       { code: "LT-BRASS-001", desc: "Custom Brass Wall Sconce", qty: 500, unit: "PCS", unit_price: null, total: null },
     ],
     answers: [
-      { section: "Technical Compliance", q: "Upload Material Certification", type: "FILE_UPLOAD", val: null, score: null },
-      { section: "Technical Compliance", q: "Warranty Period (months)", type: "NUMERIC", val: "12", score: 55 },
-      { section: "Company Profile", q: "ISO 9001:2015 Certified?", type: "BOOLEAN", val: "No", score: 0 },
+      { section: "Technical Compliance", q: "Do all luminaires meet IP44 or higher ingress protection rating?", type: "BOOLEAN", val: "IP44 for outdoor; indoor models are IP20 only", score: 55 },
+      { section: "Technical Compliance", q: "Warranty period offered on luminaires (months)", type: "NUMERIC", val: "12 months", score: 50 },
+      { section: "Technical Compliance", q: "Primary manufacturing facility location", type: "SINGLE_CHOICE", val: "India – Faridabad (non-certified facility)", score: 60 },
+      { section: "Technical Compliance", q: "Upload BIS / IS 9900:2002 Material Certification", type: "FILE_UPLOAD", val: null, score: null },
+      { section: "Quality & Compliance", q: "Is your organisation ISO 9001:2015 certified? Upload certificate.", type: "BOOLEAN", val: "No — certification in progress, expected Jan 2026", score: 0 },
+      { section: "Quality & Compliance", q: "Annual financial turnover for last 3 years (₹ Cr)", type: "NUMERIC", val: "FY23: ₹1.1 Cr | FY24: ₹1.4 Cr | FY25: ₹1.8 Cr", score: null },
+      { section: "Quality & Compliance", q: "Provide at least 2 references for similar projects (value ≥ ₹50L) executed in last 5 years", type: "FILE_UPLOAD", val: null, score: 40 },
+      { section: "Company Profile", q: "Number of years in the decorative and industrial lighting business", type: "NUMERIC", val: "4 years", score: 45 },
+      { section: "Company Profile", q: "Describe your after-sales service network in India (locations, response SLA)", type: "TEXT", val: "Single service centre in Delhi NCR; best-effort response, no formal SLA.", score: 50 },
+      { section: "Company Profile", q: "Estimated delivery lead time from purchase order (weeks)", type: "NUMERIC", val: "12–14 weeks", score: 55 },
     ],
   },
   {
@@ -183,20 +377,34 @@ export const RESPONSES: SupplierResponse[] = [
       { code: "LT-LED-002", desc: "LED Retrofit Bulb 10W E27", qty: 2000, unit: "PCS", unit_price: null, total: null },
     ],
     answers: [
-      { section: "Technical Compliance", q: "Warranty Period (months)", type: "NUMERIC", val: "24", score: 88 },
-      { section: "Company Profile", q: "ISO 9001:2015 Certified?", type: "BOOLEAN", val: "Yes", score: 100 },
+      { section: "Technical Compliance", q: "Do all luminaires meet IP44 or higher ingress protection rating?", type: "BOOLEAN", val: "Yes — IP54 certified (TÜV Rheinland verified)", score: 92 },
+      { section: "Technical Compliance", q: "Warranty period offered on luminaires (months)", type: "NUMERIC", val: "24 months", score: 88 },
+      { section: "Technical Compliance", q: "Primary manufacturing facility location", type: "SINGLE_CHOICE", val: "Germany – Munich (ISO 14001 & 9001 plant)", score: 75 },
+      { section: "Technical Compliance", q: "Upload BIS / IS 9900:2002 Material Certification", type: "FILE_UPLOAD", val: "BrightPath_TUV_Material_Cert.pdf", score: null },
+      { section: "Quality & Compliance", q: "Is your organisation ISO 9001:2015 certified? Upload certificate.", type: "FILE_UPLOAD", val: "ISO9001_BrightPath_2025.pdf", score: 100 },
+      { section: "Quality & Compliance", q: "Annual financial turnover for last 3 years (₹ Cr)", type: "NUMERIC", val: "FY23: €5.1M | FY24: €6.4M | FY25: €7.2M", score: null },
+      { section: "Quality & Compliance", q: "Provide at least 2 references for similar projects (value ≥ ₹50L) executed in last 5 years", type: "FILE_UPLOAD", val: "BrightPath_ProjectRefs.pdf", score: 85 },
+      { section: "Company Profile", q: "Number of years in the decorative and industrial lighting business", type: "NUMERIC", val: "22 years", score: 95 },
+      { section: "Company Profile", q: "Describe your after-sales service network in India (locations, response SLA)", type: "TEXT", val: "Partnership with 3 certified Indian service providers (Mumbai, Bangalore, Chennai); 24-hour escalation SLA.", score: 82 },
+      { section: "Company Profile", q: "Estimated delivery lead time from purchase order (weeks)", type: "NUMERIC", val: "8 weeks via air freight; 12 weeks ocean freight", score: 72 },
     ],
   },
 ];
 
 export const CRITERIA: EvalCriterion[] = [
-  { name: "Prior Project Experience", type: "TECHNICAL", weight: 25, max: 100, is_pf: false },
-  { name: "Technical Team Strength", type: "TECHNICAL", weight: 20, max: 100, is_pf: false },
-  { name: "Quality & Compliance Certifications", type: "COMPLIANCE", weight: 15, max: 100, is_pf: false },
-  { name: "Financial Turnover ≥ ₹2Cr", type: "FINANCIAL", weight: 0, max: 0, is_pf: true },
-  { name: "Warranty Period", type: "TECHNICAL", weight: 15, max: 100, is_pf: false },
-  { name: "Manufacturing Location", type: "TECHNICAL", weight: 10, max: 100, is_pf: false },
-  { name: "ISO Certifications", type: "COMPLIANCE", weight: 15, max: 100, is_pf: false },
+  // Technical Compliance section
+  { name: "Product IP Rating Compliance",       type: "TECHNICAL",   section: "Technical Compliance", weight: 15, max: 100, is_pf: false },
+  { name: "Warranty Period Offered",            type: "TECHNICAL",   section: "Technical Compliance", weight: 15, max: 100, is_pf: false },
+  { name: "Manufacturing Facility Location",    type: "TECHNICAL",   section: "Technical Compliance", weight: 10, max: 100, is_pf: false },
+  { name: "BIS / Material Certification",       type: "COMPLIANCE",  section: "Technical Compliance", weight: 0,  max: 0,   is_pf: true  },
+  // Quality & Compliance section
+  { name: "ISO 9001:2015 Certification",        type: "COMPLIANCE",  section: "Quality & Compliance", weight: 10, max: 100, is_pf: false },
+  { name: "Annual Financial Turnover ≥ ₹2 Cr", type: "FINANCIAL",   section: "Quality & Compliance", weight: 0,  max: 0,   is_pf: true  },
+  { name: "Past Project References (similar)",  type: "COMPLIANCE",  section: "Quality & Compliance", weight: 15, max: 100, is_pf: false },
+  // Company Profile section
+  { name: "Years in Business",                  type: "TECHNICAL",   section: "Company Profile",      weight: 10, max: 100, is_pf: false },
+  { name: "After-Sales Service Network",        type: "TECHNICAL",   section: "Company Profile",      weight: 15, max: 100, is_pf: false },
+  { name: "Delivery Lead Time",                 type: "TECHNICAL",   section: "Company Profile",      weight: 10, max: 100, is_pf: false },
 ];
 
 export const CLARIFICATIONS: Clarification[] = [
@@ -245,6 +453,10 @@ export const CLARIFICATIONS: Clarification[] = [
     status: "PENDING",
   },
 ];
+
+// Populate event 1 data after arrays are defined
+RESPONSES_BY_EVENT[1] = RESPONSES;
+CLARIFICATIONS_BY_EVENT[1] = CLARIFICATIONS;
 
 export const SUPPLIER_CATALOGUE = [
   { name: "Zenith Electricals", country: "IN" },

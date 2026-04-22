@@ -99,6 +99,7 @@ export interface Clarification {
 export interface EvalCriterion {
   name: string;
   type: string;
+  section: string;
   weight: number;
   max: number;
   is_pf: boolean;

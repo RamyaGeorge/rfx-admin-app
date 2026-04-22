@@ -13,6 +13,8 @@ import {
   ACTIVE_EVENT as INITIAL_ACTIVE,
   RESPONSES as INITIAL_RESPONSES,
   CLARIFICATIONS as INITIAL_CLARIFS,
+  RESPONSES_BY_EVENT,
+  CLARIFICATIONS_BY_EVENT,
   CRITERIA,
 } from "@/lib/rfx-data";
 import type {
@@ -36,6 +38,24 @@ const TOP_LABELS: Partial<Record<AppView, string>> = {
   settings:  "Settings",
 };
 
+function toActiveEvent(ev: RFXEvent): ActiveEvent {
+  if (ev.id === INITIAL_ACTIVE.id) return { ...INITIAL_ACTIVE };
+  return {
+    id: ev.id,
+    number: ev.number,
+    type: ev.type,
+    title: ev.title,
+    status: ev.status,
+    deadline: ev.deadline,
+    two_envelope: false,
+    tech_opening: "—",
+    fin_opening: "—",
+    tech_phase: "SEALED",
+    fin_phase: "SEALED",
+    min_qual_score: 70,
+  };
+}
+
 export default function Home() {
   const [view, setView]     = useState<AppView>("events");
   const [events, setEvents] = useState<RFXEvent[]>(INITIAL_EVENTS);
@@ -46,6 +66,12 @@ export default function Home() {
   const [publishedCount, setPublishedCount] = useState(0);
 
   function navigate(v: AppView) { setView(v); }
+
+  function switchEvent(ev: RFXEvent) {
+    setActiveEvent(toActiveEvent(ev));
+    setResponses((RESPONSES_BY_EVENT[ev.id] ?? []).map(r => ({ ...r })));
+    setClarifications((CLARIFICATIONS_BY_EVENT[ev.id] ?? []).map(c => ({ ...c })));
+  }
 
   function handlePublish(wiz: WizState) {
     setEvents(ev => [{
@@ -113,7 +139,11 @@ export default function Home() {
             <EventsList
               events={events}
               onCreateEvent={() => navigate("wizard")}
-              onOpenEvent={() => navigate("responses")}
+              onOpenEvent={(id) => {
+                const ev = events.find(e => e.id === id);
+                if (ev) switchEvent(ev);
+                navigate("responses");
+              }}
               onEditDraft={() => navigate("wizard")}
             />
           )}
@@ -127,11 +157,13 @@ export default function Home() {
           {(view === "responses" || view === "eval" || view === "award") && (
             <ResponsesView
               event={activeEvent}
+              events={events}
               responses={responses}
               clarifications={clarifications}
               criteria={CRITERIA}
               onNavigate={navigate}
               onUpdateEvent={handleUpdateEvent}
+              onSelectEvent={switchEvent}
               onUpdateResponses={setResponses}
               onUpdateClarifications={setClarifications}
             />

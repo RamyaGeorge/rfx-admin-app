@@ -4,21 +4,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TypeBadge, StatusBadge, EnvelopeBadge, InfoBox, ScoreBar, StatCard } from "./shared";
-import type { ActiveEvent, SupplierResponse, Clarification, EvalCriterion, RespState, AppView } from "@/lib/rfx-types";
+import type { ActiveEvent, RFXEvent, SupplierResponse, Clarification, EvalCriterion, AppView } from "@/lib/rfx-types";
 import {
-  ChevronLeft, Lock, Unlock, Award, X, CheckCircle2,
-  FileText, Search, MessageSquare,
+  ChevronLeft, Unlock, Award, X, CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ResponsesViewProps {
   event: ActiveEvent;
+  events: RFXEvent[];
   responses: SupplierResponse[];
   clarifications: Clarification[];
   criteria: EvalCriterion[];
   onNavigate: (view: AppView) => void;
   onUpdateEvent: (patch: Partial<ActiveEvent>) => void;
+  onSelectEvent: (ev: RFXEvent) => void;
   onUpdateResponses: (responses: SupplierResponse[]) => void;
   onUpdateClarifications: (clarifications: Clarification[]) => void;
 }
@@ -28,8 +30,8 @@ type ClarifFilter = "ALL" | "PENDING" | "ANSWERED";
 type AppSubView = "list" | "eval" | "award";
 
 export function ResponsesView({
-  event, responses, clarifications, criteria,
-  onNavigate, onUpdateEvent, onUpdateResponses, onUpdateClarifications,
+  event, events, responses, clarifications, criteria,
+  onNavigate, onUpdateEvent, onSelectEvent, onUpdateResponses, onUpdateClarifications,
 }: ResponsesViewProps) {
   const [tab, setTab] = useState<RespTab>("responses");
   const [subView, setSubView] = useState<AppSubView>("list");
@@ -48,9 +50,9 @@ export function ResponsesView({
   if (subView === "award") {
     return (
       <AwardPage
-        event={event} responses={responses} criteria={criteria}
+        responses={responses}
         onBack={() => setSubView("list")}
-        onConfirm={(suppId, amount, notes) => {
+        onConfirm={(suppId, _amount, _notes) => {
           const updated = responses.map(r => ({ ...r, is_awarded: r.id === suppId }));
           onUpdateResponses(updated);
           onUpdateEvent({ status: "AWARDED" });
@@ -84,16 +86,44 @@ export function ResponsesView({
     );
   }
 
+  /* ── Tab visibility by event type ──────────────────────────── */
+  const isRFI = event.type === "RFI";
+  const hasEvaluation = !isRFI;
+  const hasFinancial = !isRFI;
+
   /* ── Main tabs view ─────────────────────────────────────────── */
-  const tabs: { key: RespTab; label: string; count: number; locked?: boolean }[] = [
-    { key: "responses", label: "Supplier Responses", count: responses.length },
-    { key: "evaluation", label: "Evaluation & Scoring", count: qualified.length },
-    { key: "financial", label: "Financial Envelopes", count: qualified.filter(r => r.fin_env === "OPENED").length, locked: !finOpened },
-    { key: "clarifications", label: "Q&A / Clarifications", count: clarifications.length },
+  const allTabs: { key: RespTab; label: string; count: number; locked?: boolean; show: boolean }[] = [
+    { key: "responses",      label: "Supplier Responses",   count: responses.length, show: true },
+    { key: "evaluation",     label: "Evaluation & Scoring", count: qualified.length, show: hasEvaluation },
+    { key: "financial",      label: "Financial Envelopes",  count: qualified.filter(r => r.fin_env === "OPENED").length, locked: !finOpened, show: hasFinancial },
+    { key: "clarifications", label: "Q&A / Clarifications", count: clarifications.length, show: true },
   ];
+  const tabs = allTabs.filter(t => t.show);
+
+  // Reset to "responses" tab if current tab is hidden for this event type
+  const validTab = tabs.find(t => t.key === tab) ? tab : "responses";
 
   return (
     <div className="p-7">
+      {/* Event selector */}
+      <div className="mb-5">
+        <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1.5 block">Select Event</label>
+        <select
+          value={event.id}
+          onChange={e => {
+            const selected = events.find(ev => ev.id === Number(e.target.value));
+            if (selected) onSelectEvent(selected);
+          }}
+          className="w-full max-w-md h-9 rounded-lg border border-slate-200 bg-white px-3 text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+        >
+          {events.map(ev => (
+            <option key={ev.id} value={ev.id}>
+              {ev.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Page header */}
       <div className="flex items-start justify-between mb-5">
         <div>
@@ -104,22 +134,24 @@ export function ResponsesView({
           </div>
           <h1 className="text-[18px] font-semibold text-slate-900">{event.title}</h1>
           <p className="text-[12px] text-slate-500 mt-0.5">{event.type} · Submission closed: {event.deadline}</p>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-[12px] text-slate-500">Min qualification score:</span>
-            <Input type="number" min={0} max={100} value={minQual}
-              onChange={e => setMinQual(parseInt(e.target.value) || 0)}
-              onBlur={() => onUpdateEvent({ min_qual_score: minQual })}
-              className="w-16 h-7 text-[12px] text-center px-1" />
-            <span className="text-[12px] text-slate-400">/ 100 – suppliers below this score are excluded from financial evaluation</span>
-          </div>
+          {hasEvaluation && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-[12px] text-slate-500">Min qualification score:</span>
+              <Input type="number" min={0} max={100} value={minQual}
+                onChange={e => setMinQual(parseInt(e.target.value) || 0)}
+                onBlur={() => onUpdateEvent({ min_qual_score: minQual })}
+                className="w-16 h-7 text-[12px] text-center px-1" />
+              <span className="text-[12px] text-slate-400">/ 100 – suppliers below this score are excluded from financial evaluation</span>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => onNavigate("events")} className="gap-1">
             <ChevronLeft size={13} /> All events
           </Button>
-          {event.status !== "CANCELLED" && event.status !== "AWARDED" && (
+          {hasFinancial && event.status !== "CANCELLED" && event.status !== "AWARDED" && (
             finOpened
-              ? <Button size="sm" onClick={() => setSubView("award")} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+              ? <Button size="sm" onClick={() => setSubView("award")} className="gap-1.5">
                   <Award size={13} /> Award contract
                 </Button>
               : <Button size="sm" onClick={() => handleOpenEnvelopes()} className="gap-1.5">
@@ -150,9 +182,14 @@ export function ResponsesView({
       {event.status === "AWARDED" && (
         <InfoBox variant="green"><strong>Contract awarded.</strong> The awarded supplier has been notified. The contract award has been recorded.</InfoBox>
       )}
-      {event.status !== "CANCELLED" && event.status !== "AWARDED" && event.two_envelope && (
+      {!isRFI && event.status !== "CANCELLED" && event.status !== "AWARDED" && event.two_envelope && (
         <InfoBox variant="amber">
           <strong>Two-envelope event.</strong> Technical envelopes opened {event.tech_opening}. Financial envelopes {finOpened ? <strong>opened {event.fin_opening}</strong> : `sealed until ${event.fin_opening}`}. {finOpened ? "You may now proceed to award." : "Score all suppliers to unlock the financial envelope tab."}
+        </InfoBox>
+      )}
+      {isRFI && (
+        <InfoBox variant="blue">
+          <strong>RFI — Information only.</strong> No pricing or scoring. Review supplier responses and use insights to prepare a future RFP or RFQ.
         </InfoBox>
       )}
 
@@ -164,7 +201,7 @@ export function ResponsesView({
               onClick={() => !t.locked && setTab(t.key)}
               className={cn(
                 "px-4 py-3 text-[13px] border-b-2 mb-[-1px] transition-all",
-                tab === t.key ? "text-sky-600 border-sky-500 font-medium" : "text-slate-500 border-transparent hover:text-slate-800",
+                validTab === t.key ? "text-sky-600 border-sky-500 font-medium" : "text-slate-500 border-transparent hover:text-slate-800",
                 t.locked && "opacity-40 cursor-not-allowed"
               )}>
               {t.label}
@@ -175,22 +212,22 @@ export function ResponsesView({
           ))}
         </div>
         <div className="p-5">
-          {tab === "responses" && (
-            <ResponsesTab responses={responses} minQual={minQual}
+          {validTab === "responses" && (
+            <ResponsesTab responses={responses} minQual={minQual} isRFI={isRFI}
               onEval={r => { setEvalSupplier(r); setScores({}); setSubView("eval"); }}
               onDisqualify={id => {
                 onUpdateResponses(responses.map(r => r.id !== id ? r : { ...r, is_disqualified: true, disqualify_reason: "Manually disqualified by procurement manager." }));
               }} />
           )}
-          {tab === "evaluation" && (
+          {validTab === "evaluation" && (
             <EvaluationTab responses={responses} qualified={qualified} minQual={minQual}
               onEval={r => { setEvalSupplier(r); setScores({}); setSubView("eval"); }}
               onOpenEnvelopes={handleOpenEnvelopes} />
           )}
-          {tab === "financial" && finOpened && (
+          {validTab === "financial" && finOpened && (
             <FinancialTab qualified={qualified} event={event} onAward={() => setSubView("award")} />
           )}
-          {tab === "clarifications" && (
+          {validTab === "clarifications" && (
             <ClarificationsTab clarifications={clarifications} filter={clarifFilter}
               setFilter={setClarifFilter} clarifOpen={clarifOpen} setClarifOpen={setClarifOpen}
               onSubmitAnswer={(id, ans, publish) => {
@@ -229,65 +266,86 @@ export function ResponsesView({
 }
 
 /* ── Responses tab ──────────────────────────────────────────────── */
-function ResponsesTab({ responses, minQual, onEval, onDisqualify }: {
-  responses: SupplierResponse[]; minQual: number;
+
+function ResponsesTab({ responses, minQual, isRFI, onEval, onDisqualify }: {
+  responses: SupplierResponse[]; minQual: number; isRFI: boolean;
   onEval: (r: SupplierResponse) => void; onDisqualify: (id: number) => void;
 }) {
+
+  if (responses.length === 0) {
+    return <p className="text-[13px] text-slate-400 text-center py-8">No responses received yet.</p>;
+  }
+
   return (
-    <>
-      <table className="w-full">
-        <thead className="bg-slate-50">
-          <tr>
-            {["Supplier", "Status", "Envelopes", "Tech score", "Actions"].map(h => (
-              <th key={h} className="text-left px-3 py-2 text-[11px] font-semibold text-slate-400 border-b border-slate-200">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {responses.map(r => {
-            const scoreOk = r.tech_score != null && r.tech_score >= minQual && !r.is_disqualified && r.status === "SUBMITTED";
-            return (
-              <tr key={r.id} className={cn("border-b border-slate-100 last:border-0", scoreOk && "bg-emerald-50/40")}>
-                <td className="px-3 py-3">
-                  <div className="text-[13px] font-medium text-slate-900">{r.supplier}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">{r.country} · Submitted: {r.submitted}</div>
-                </td>
-                <td className="px-3 py-3">
+    <div className="flex flex-col gap-3">
+      {responses.map(r => {
+        const scoreOk = !isRFI && r.tech_score != null && r.tech_score >= minQual && !r.is_disqualified && r.status === "SUBMITTED";
+        return (
+          <div key={r.id} className={cn("border rounded-xl overflow-hidden transition-all", scoreOk ? "border-emerald-200 bg-emerald-50/30" : "border-slate-200 bg-white")}>
+            {/* Card header row */}
+            <div className="flex items-center gap-4 px-4 py-3">
+              {/* Supplier info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[13px] font-semibold text-slate-900">{r.supplier}</span>
+                  <span className="text-[11px] text-slate-400">{r.country}</span>
                   <StatusBadge status={r.is_disqualified ? "DISQUALIFIED" : r.status} />
-                </td>
-                <td className="px-3 py-3">
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Submitted: {r.submitted}</div>
+              </div>
+
+              {/* Score / envelope (non-RFI) */}
+              {!isRFI && (
+                <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="flex flex-col gap-1">
                     <EnvelopeBadge label="Tech" status={r.tech_env} />
                     <EnvelopeBadge label="Fin" status={r.fin_env} />
                   </div>
-                </td>
-                <td className="px-3 py-3 min-w-[130px]">
-                  {r.tech_score != null ? (
-                    <>
-                      <span className={cn("text-[13px] font-semibold", r.tech_score >= minQual ? "text-emerald-600" : "text-red-500")}>
-                        {r.tech_score.toFixed(1)}<span className="text-[11px] text-slate-400 font-normal"> / 100</span>
-                      </span>
-                      <ScoreBar value={r.tech_score} pass={r.tech_score >= minQual} />
-                    </>
-                  ) : <span className="text-[11px] text-slate-400">Not scored</span>}
-                </td>
-                <td className="px-3 py-3">
-                  {r.status === "SUBMITTED" && !r.is_disqualified ? (
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="h-7 text-[12px]" onClick={() => onEval(r)}>Score</Button>
-                      <Button size="sm" variant="outline" className="h-7 text-[12px] text-red-600 border-red-200 hover:bg-red-50" onClick={() => onDisqualify(r.id)}>Disqualify</Button>
-                    </div>
-                  ) : r.is_disqualified ? (
-                    <span className="text-[11px] text-red-500">{r.disqualify_reason}</span>
-                  ) : "—"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <p className="text-[12px] text-slate-400 mt-3">Min qualification score: {minQual}/100 – suppliers below this threshold are excluded from financial evaluation.</p>
-    </>
+                  <div className="min-w-[110px]">
+                    {r.tech_score != null ? (
+                      <>
+                        <span className={cn("text-[13px] font-semibold", r.tech_score >= minQual ? "text-emerald-600" : "text-red-500")}>
+                          {r.tech_score.toFixed(1)}<span className="text-[11px] text-slate-400 font-normal"> / 100</span>
+                        </span>
+                        <ScoreBar value={r.tech_score} pass={r.tech_score >= minQual} />
+                      </>
+                    ) : <span className="text-[11px] text-slate-400">Not yet scored</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* RFI: answer count summary */}
+              {isRFI && (
+                <div className="flex-shrink-0 text-[11px] text-slate-400">
+                  {r.answers.length} answer{r.answers.length !== 1 ? "s" : ""}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {!isRFI && r.status === "SUBMITTED" && !r.is_disqualified && (
+                  <>
+                    <Button size="sm" variant="outline" className="h-7 text-[12px]" onClick={() => onEval(r)}>Score</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[12px] text-red-600 border-red-200 hover:bg-red-50" onClick={() => onDisqualify(r.id)}>Disqualify</Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Disqualify reason */}
+            {r.is_disqualified && r.disqualify_reason && (
+              <div className="px-4 pb-2">
+                <span className="text-[11px] text-red-500">{r.disqualify_reason}</span>
+              </div>
+            )}
+
+          </div>
+        );
+      })}
+      {!isRFI && (
+        <p className="text-[11px] text-slate-400 mt-1">Min qualification score: {minQual}/100 — suppliers below this threshold are excluded from financial evaluation.</p>
+      )}
+    </div>
   );
 }
 
@@ -360,7 +418,6 @@ function EvaluationTab({ responses, qualified, minQual, onEval, onOpenEnvelopes 
               <td className="px-3 py-3">
                 <div className="flex gap-1.5">
                   <Button size="sm" onClick={() => onEval(r)} className="h-7 text-[12px]">{r.tech_score != null ? "Update scores" : "Score now"}</Button>
-                  <Button size="sm" variant="outline" onClick={() => onEval(r)} className="h-7 text-[12px]">View answers</Button>
                 </div>
               </td>
             </tr>
@@ -539,13 +596,24 @@ function EvalPage({ supplier, criteria, scores, minQual, onBack, onSave, setScor
   setScores: React.Dispatch<React.SetStateAction<Record<string, { score: string; pf: "PASS" | "FAIL" | null; comment: string }>>>;
 }) {
   function scoreKey(name: string) { return `${supplier.id}:${name}`; }
-  function getScore(name: string) { return scores[scoreKey(name)] ?? { score: "", pf: null, comment: "" }; }
+  function getScore(name: string, answerScore?: number | null) {
+    const saved = scores[scoreKey(name)];
+    if (saved) return saved;
+    // Pre-populate from the supplier's answer score if available
+    const pre = answerScore != null ? String(answerScore) : "";
+    return { score: pre, pf: null as "PASS" | "FAIL" | null, comment: "" };
+  }
   function setField(name: string, field: string, val: unknown) {
     setScores(s => ({ ...s, [scoreKey(name)]: { ...getScore(name), [field]: val } }));
   }
 
   const totalWeighted = criteria.filter(c => !c.is_pf).reduce((s, c) => {
-    const sc = getScore(c.name);
+    const matchedAns = supplier.answers.find(a =>
+      a.q === c.name ||
+      a.q.toLowerCase().includes(c.name.toLowerCase().split(" ").slice(0, 3).join(" ")) ||
+      c.name.toLowerCase().includes(a.q.toLowerCase().split(" ").slice(0, 3).join(" "))
+    );
+    const sc = getScore(c.name, matchedAns?.score);
     return s + (sc.score !== "" ? (parseFloat(sc.score || "0") / c.max) * c.weight : 0);
   }, 0);
 
@@ -565,120 +633,171 @@ function EvalPage({ supplier, criteria, scores, minQual, onBack, onSave, setScor
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-1"><ChevronLeft size={13} /> Back</Button>
-          <Button size="sm" onClick={() => onSave(supplier.id, totalWeighted)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+          <Button size="sm" onClick={() => onSave(supplier.id, totalWeighted)} className="gap-1.5">
             <CheckCircle2 size={13} /> Save & return
           </Button>
         </div>
       </div>
 
-      {/* Answers */}
-      <div className="border border-slate-200 rounded-xl overflow-hidden mb-4">
-        <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-slate-800">Questionnaire answers</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-100">
-              <tr>
-                {["Section", "Question", "Answer"].map(h => (
-                  <th key={h} className="text-left px-3 py-2 text-[11px] font-semibold text-slate-400">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {supplier.answers.map((a, i) => (
-                <tr key={i} className="border-b border-slate-100 last:border-0">
-                  <td className="px-3 py-2.5 text-[12px] text-slate-400">{a.section}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-slate-700">{a.q}</td>
-                  <td className="px-3 py-2.5">
-                    {a.type === "FILE_UPLOAD"
-                      ? <span className="flex items-center gap-1.5 text-[12px] text-sky-600"><FileText size={12} />{a.val ?? "No file uploaded"}</span>
-                      : <span className="text-[13px] font-medium text-slate-800">{a.val ?? "—"}</span>
-                    }
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Scoring */}
-      <div className="border border-slate-200 rounded-xl overflow-hidden">
-        <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-slate-800">Evaluation criteria scoring</span>
-          <span className="text-[13px] text-slate-500">
-            Projected score: <strong className={totalWeighted >= minQual ? "text-emerald-600" : "text-red-500"}>{totalWeighted.toFixed(1)} / 100</strong>
-          </span>
-        </div>
-        <div className="p-4">
-          {/* header row */}
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2.5 pb-2 mb-1 border-b border-slate-100 text-[11px] font-semibold text-slate-400">
-            <div>Criterion</div><div className="text-center">Score</div><div className="text-center">Weight</div><div className="text-center">Contribution</div><div>Comment</div>
-          </div>
-          {criteria.map(cr => {
-            const sc = getScore(cr.name);
-            const contrib = !cr.is_pf && sc.score !== "" ? ((parseFloat(sc.score || "0") / cr.max) * cr.weight).toFixed(1) : "—";
-            return (
-              <div key={cr.name} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2.5 py-2.5 border-b border-slate-50 last:border-0 items-center">
-                <div>
-                  <div className="text-[13px] text-slate-800">{cr.name}</div>
-                  <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full border mt-0.5 inline-block", CRIT_TYPE_COLORS[cr.type] ?? "bg-slate-50 text-slate-400 border-slate-200")}>
-                    {cr.type}
+      {/* Sections grouped by criteria.section — one row per criterion: question + answer + score */}
+      {(() => {
+        const sectionNames = Array.from(new Set(criteria.map(c => c.section)));
+        const TYPE_COLORS: Record<string, string> = {
+          TECHNICAL:  "bg-sky-50 text-sky-700 border-sky-200",
+          COMPLIANCE: "bg-violet-50 text-violet-700 border-violet-200",
+          FINANCIAL:  "bg-amber-50 text-amber-700 border-amber-200",
+          HSE:        "bg-teal-50 text-teal-700 border-teal-200",
+          GENERAL:    "bg-slate-100 text-slate-500 border-slate-200",
+        };
+        return sectionNames.map(secName => {
+          const sectionCriteria = criteria.filter(c => c.section === secName);
+          const sectionAnswers  = supplier.answers.filter(a => a.section === secName);
+          const firstType = sectionCriteria[0]?.type ?? "GENERAL";
+          const badge = TYPE_COLORS[firstType] ?? TYPE_COLORS.GENERAL;
+          const sectionScore = sectionCriteria.filter(c => !c.is_pf).reduce((sum, c) => {
+            const matchedAns = sectionAnswers.find(a =>
+              a.q === c.name ||
+              a.q.toLowerCase().includes(c.name.toLowerCase().split(" ").slice(0, 3).join(" ")) ||
+              c.name.toLowerCase().includes(a.q.toLowerCase().split(" ").slice(0, 3).join(" "))
+            );
+            const sc = getScore(c.name, matchedAns?.score);
+            return sum + (sc.score !== "" ? (parseFloat(sc.score || "0") / c.max) * c.weight : 0);
+          }, 0);
+          const sectionWeight = sectionCriteria.filter(c => !c.is_pf).reduce((s, c) => s + c.weight, 0);
+          return (
+            <div key={secName} className="border border-slate-200 rounded-xl overflow-hidden mb-4">
+              <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide flex-shrink-0", badge)}>
+                    {firstType}
                   </span>
-                  {cr.is_pf && (
-                    <div className="flex gap-1.5 mt-1.5">
-                      {(["PASS", "FAIL"] as const).map(v => (
-                        <button key={v} onClick={() => setField(cr.name, "pf", v)}
-                          className={cn("text-[11px] px-2.5 py-1 rounded-md border font-medium transition-all",
-                            sc.pf === v
-                              ? v === "PASS" ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-red-100 text-red-700 border-red-300"
-                              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                          )}>{v}</button>
-                      ))}
-                    </div>
+                  <span className="text-[13px] font-semibold text-slate-800">{secName}</span>
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Section weight: <span className="font-semibold text-slate-600">{sectionWeight}%</span>
+                  {sectionScore > 0 && (
+                    <span className="ml-3 font-semibold text-sky-600">{sectionScore.toFixed(1)} pts so far</span>
                   )}
                 </div>
-                {cr.is_pf ? (
-                  <><div className="text-[12px] text-slate-400 text-center col-span-3">Pass/fail gate</div><div /></>
-                ) : (
-                  <>
-                    <div>
-                      <Input type="number" min={0} max={cr.max} value={sc.score}
-                        onChange={e => setField(cr.name, "score", e.target.value)}
-                        className="h-8 text-[12px] text-center" placeholder={`0–${cr.max}`} />
-                    </div>
-                    <div className="text-[12px] text-slate-400 text-center">×{cr.weight}%</div>
-                    <div className="text-[12px] font-medium text-emerald-600 text-center">{contrib}</div>
-                    <div>
-                      <Input value={sc.comment} onChange={e => setField(cr.name, "comment", e.target.value)}
-                        className="h-8 text-[11px]" placeholder="Comment…" />
-                    </div>
-                  </>
-                )}
               </div>
-            );
-          })}
+              <div className="grid grid-cols-[1.8fr_1.6fr_180px_160px] border-b border-slate-100 bg-slate-50/40">
+                <div className="px-5 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Evaluation Criterion</div>
+                <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Supplier Answer</div>
+                <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Score / Max</div>
+                <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Comment</div>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {sectionCriteria.map(cr => {
+                  const ans = sectionAnswers.find(a =>
+                    a.q === cr.name ||
+                    a.q.toLowerCase().includes(cr.name.toLowerCase().split(" ").slice(0, 3).join(" ")) ||
+                    cr.name.toLowerCase().includes(a.q.toLowerCase().split(" ").slice(0, 3).join(" "))
+                  );
+                  const sc = getScore(cr.name, ans?.score);
+                  const contrib = !cr.is_pf && sc.score !== "" ? ((parseFloat(sc.score || "0") / cr.max) * cr.weight).toFixed(1) : null;
+                  return (
+                    <div key={cr.name} className="grid grid-cols-[1.8fr_1.6fr_180px_160px] items-start hover:bg-blue-50/20 transition-colors">
+                      <div className="px-5 py-3.5">
+                        <div className="text-[12px] font-medium text-slate-800 leading-snug">{cr.name}</div>
+                        {cr.is_pf
+                          ? <span className="inline-block mt-1 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Pass / Fail gate</span>
+                          : <span className="text-[10px] text-slate-400 mt-0.5 block">Weight: {cr.weight}%</span>
+                        }
+                      </div>
+                      <div className="px-4 py-3.5 border-l border-slate-100">
+                        {ans ? (
+                          <div>
+                            <div className="text-[10px] text-slate-400 mb-0.5 leading-tight">{ans.q}</div>
+                            {ans.type === "FILE_UPLOAD"
+                              ? <span className="flex items-center gap-1 text-[12px] text-sky-600 font-medium"><FileText size={11} />{ans.val ?? <span className="text-red-400">No file uploaded</span>}</span>
+                              : <span className="text-[12px] font-semibold text-slate-800 leading-snug">{ans.val ?? <span className="text-slate-400 font-normal">Not answered</span>}</span>
+                            }
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">No answer provided</span>
+                        )}
+                      </div>
+                      <div className="px-4 py-3 border-l border-slate-100">
+                        {cr.is_pf ? (
+                          <div className="flex gap-1.5">
+                            {(["PASS", "FAIL"] as const).map(v => (
+                              <button key={v} onClick={() => setField(cr.name, "pf", v)}
+                                className={cn("flex-1 text-[11px] py-1 rounded-md border font-medium transition-all text-center",
+                                  sc.pf === v
+                                    ? v === "PASS" ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-red-100 text-red-700 border-red-300"
+                                    : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                                )}>{v}</button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Input type="number" min={0} max={cr.max} value={sc.score}
+                                onChange={e => setField(cr.name, "score", e.target.value)}
+                                className="h-8 text-[13px] font-semibold text-center w-16 flex-shrink-0"
+                                placeholder="—" />
+                              <span className="text-[11px] text-slate-400 whitespace-nowrap">/ {cr.max}</span>
+                            </div>
+                            {contrib != null
+                              ? <div className="text-[10px] font-semibold text-sky-600">{contrib} pts</div>
+                              : <div className="text-[10px] text-slate-300">— pts</div>
+                            }
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-4 py-3 border-l border-slate-100">
+                        <Input value={sc.comment} onChange={e => setField(cr.name, "comment", e.target.value)}
+                          className="h-8 text-[11px]" placeholder="Evaluator note…" />
+                      </div>
+                    </div>
+                  );
+                })}
+                {sectionAnswers.filter(a => !sectionCriteria.some(cr =>
+                  a.q === cr.name ||
+                  a.q.toLowerCase().includes(cr.name.toLowerCase().split(" ").slice(0, 3).join(" ")) ||
+                  cr.name.toLowerCase().includes(a.q.toLowerCase().split(" ").slice(0, 3).join(" "))
+                )).map((a, i) => (
+                  <div key={"info-" + i} className="grid grid-cols-[1.8fr_1.6fr_180px_160px] items-start bg-slate-50/30">
+                    <div className="px-5 py-3">
+                      <div className="text-[12px] text-slate-600 leading-snug">{a.q}</div>
+                      <span className="text-[10px] text-slate-400">Reference — not scored</span>
+                    </div>
+                    <div className="px-4 py-3 border-l border-slate-100">
+                      {a.type === "FILE_UPLOAD"
+                        ? <span className="flex items-center gap-1 text-[12px] text-sky-600"><FileText size={11} />{a.val ?? "No file"}</span>
+                        : <span className="text-[12px] font-semibold text-slate-800">{a.val ?? "—"}</span>
+                      }
+                    </div>
+                    <div className="px-4 py-3 border-l border-slate-100 text-[11px] text-slate-300 text-center">—</div>
+                    <div className="px-4 py-3 border-l border-slate-100" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        });
+      })()}
 
-          {/* Total row */}
-          <div className="flex items-center justify-between mt-4 pt-3.5 border-t border-slate-200 bg-slate-50 rounded-lg px-4 py-3">
-            <div className="text-[13px] text-slate-600">
-              Total weighted score:{" "}
-              <strong className={cn("text-[16px]", totalWeighted >= minQual ? "text-emerald-600" : "text-red-500")}>
-                {totalWeighted.toFixed(1)} / 100
-              </strong>
-              {totalWeighted >= minQual
-                ? <span className="text-[11px] text-emerald-600 ml-2">Qualifies (≥{minQual})</span>
-                : <span className="text-[11px] text-red-500 ml-2">Below threshold ({minQual})</span>
-              }
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={onBack}>Cancel</Button>
-              <Button size="sm" onClick={() => onSave(supplier.id, totalWeighted)} className="bg-emerald-600 hover:bg-emerald-700 gap-1">
-                <CheckCircle2 size={13} /> Save & return
-              </Button>
-            </div>
+            {/* Total score footer */}
+      <div className="flex items-center justify-between border border-slate-200 rounded-xl bg-slate-50 px-5 py-4">
+        <div>
+          <div className="text-[11px] text-slate-500 mb-0.5">Total weighted score</div>
+          <div className="flex items-baseline gap-2">
+            <strong className={cn("text-[22px] font-bold", totalWeighted >= minQual ? "text-emerald-600" : "text-red-500")}>
+              {totalWeighted.toFixed(1)}
+            </strong>
+            <span className="text-[13px] text-slate-400">/ 100</span>
+            {totalWeighted >= minQual
+              ? <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Qualifies (≥{minQual})</span>
+              : <span className="text-[11px] font-medium text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">Below threshold ({minQual})</span>
+            }
           </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={onBack}>Cancel</Button>
+          <Button size="sm" onClick={() => onSave(supplier.id, totalWeighted)} className="gap-1">
+            <CheckCircle2 size={13} /> Save & return
+          </Button>
         </div>
       </div>
     </div>
@@ -686,8 +805,8 @@ function EvalPage({ supplier, criteria, scores, minQual, onBack, onSave, setScor
 }
 
 /* ── Award page ─────────────────────────────────────────────────── */
-function AwardPage({ event, responses, criteria, onBack, onConfirm }: {
-  event: ActiveEvent; responses: SupplierResponse[]; criteria: EvalCriterion[];
+function AwardPage({ responses, onBack, onConfirm }: {
+  responses: SupplierResponse[];
   onBack: () => void;
   onConfirm: (suppId: number, amount: string, notes: string) => void;
 }) {
