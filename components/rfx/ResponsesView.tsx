@@ -432,7 +432,7 @@ function FinancialTab({ qualified, event, onAward }: {
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
         <span className="text-[12px] text-slate-500">{opened.length} financial bids opened · L1 bid: ₹{sorted[0]?.fin_env_amount?.toLocaleString("en-IN") ?? "—"}</span>
         {event.status !== "AWARDED" && event.status !== "CANCELLED" && (
-          <Button onClick={onAward} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"><CheckCircle2 size={13} /> Proceed to award</Button>
+          <Button onClick={onAward} className="gap-1.5"><CheckCircle2 size={13} /> Proceed to award</Button>
         )}
       </div>
     </>

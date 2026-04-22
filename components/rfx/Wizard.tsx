@@ -161,7 +161,7 @@ export function Wizard({ onNavigate, onPublish }: WizardProps) {
                 {/* step dot */}
                 <div className={cn(
                   "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold transition-all",
-                  active && "bg-slate-900 text-white",
+                  active && "bg-primary text-white",
                   done && "bg-emerald-500 text-white",
                   !active && !done && "bg-slate-200 text-slate-400"
                 )}>
@@ -191,7 +191,7 @@ export function Wizard({ onNavigate, onPublish }: WizardProps) {
           </div>
           <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-slate-900 rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${((wiz.step + 1) / steps.length) * 100}%` }}
             />
           </div>
@@ -220,8 +220,8 @@ export function Wizard({ onNavigate, onPublish }: WizardProps) {
             className={cn(
               "flex items-center gap-2 text-[13px] font-semibold px-5 py-2 rounded-xl transition-all",
               isLast
-                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                : "bg-slate-900 hover:bg-slate-700 text-white"
+                ? "bg-primary hover:bg-primary/80 text-primary-foreground"
+                : "bg-primary hover:bg-primary/80 text-primary-foreground"
             )}
           >
             {isLast ? <><Check size={14} /> Publish event</> : <>Continue <ChevronRight size={14} /></>}
@@ -262,7 +262,7 @@ function Step0({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
               {/* check */}
               <div className={cn(
                 "absolute top-3.5 right-3.5 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
-                sel ? "bg-slate-900 border-slate-900" : "border-slate-200 bg-white"
+                sel ? "bg-primary border-primary" : "border-slate-200 bg-white"
               )}>
                 {sel && <Check size={9} className="text-white" strokeWidth={3} />}
               </div>
@@ -530,7 +530,7 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     <div>
       <div className="flex items-start justify-between mb-4">
         <StepHeader title="Questionnaire" sub="Scored questions contribute to the technical evaluation score." inline />
-        <button onClick={addSection} className="flex items-center gap-1.5 text-[12px] font-semibold bg-slate-900 text-white px-3.5 py-2 rounded-xl hover:bg-slate-700 transition-colors flex-shrink-0">
+        <button onClick={addSection} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors flex-shrink-0">
           <Plus size={13} /> Add section
         </button>
       </div>
@@ -630,7 +630,7 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     <div>
       <div className="flex items-start justify-between mb-4">
         <StepHeader title="Participants" sub="Invite suppliers — they'll be notified when the event is published." inline />
-        <button onClick={() => setWiz(w => ({ ...w, _inviteOpen: true, _inviteSearch: "", _inviteSelected: [] }))} className="flex items-center gap-1.5 text-[12px] font-semibold bg-slate-900 text-white px-3.5 py-2 rounded-xl hover:bg-slate-700 transition-colors flex-shrink-0">
+        <button onClick={() => setWiz(w => ({ ...w, _inviteOpen: true, _inviteSearch: "", _inviteSelected: [] }))} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors flex-shrink-0">
           <Plus size={13} /> Invite suppliers
         </button>
       </div>
@@ -670,7 +670,7 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                     <div key={s.name} onClick={() => toggleSelect(s.name)}
                       className={cn("flex items-center gap-3 px-3.5 py-2.5 rounded-xl cursor-pointer border transition-all", checked ? "bg-white border-slate-900" : "bg-white border-slate-200 hover:border-slate-300")}
                     >
-                      <div className={cn("w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all", checked ? "bg-slate-900 border-slate-900" : "bg-white border-slate-300")}>
+                      <div className={cn("w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all", checked ? "bg-primary border-primary" : "bg-white border-slate-300")}>
                         {checked && <Check size={9} className="text-white" strokeWidth={3} />}
                       </div>
                       <span className="flex-1 text-[13px] font-medium text-slate-800">{s.name}</span>
@@ -682,7 +682,7 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           </div>
           {(wiz._inviteSelected?.length ?? 0) > 0 && (
             <div className="mt-4 pt-4 border-t border-slate-200 flex items-center gap-3">
-              <button onClick={confirmInvite} className="text-[12px] font-semibold bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-700 transition-colors">
+              <button onClick={confirmInvite} className="text-[12px] font-semibold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/80 transition-colors">
                 Send invitations ({wiz._inviteSelected!.length})
               </button>
               <span className="text-[11px] text-slate-400">Invites go out when the event is published.</span>
@@ -743,7 +743,7 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     <div>
       <div className="flex items-start justify-between mb-4">
         <StepHeader title="Reminders" sub="Schedule supplemental notifications for this event." inline />
-        <button onClick={addReminder} className="flex items-center gap-1.5 text-[12px] font-semibold bg-slate-900 text-white px-3.5 py-2 rounded-xl hover:bg-slate-700 transition-colors flex-shrink-0">
+        <button onClick={addReminder} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors flex-shrink-0">
           <Plus size={13} /> Add reminder
         </button>
       </div>
@@ -769,7 +769,7 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
             <div className="text-[11px] text-slate-400 mb-2">Recipients</div>
             <div className="flex gap-1.5">
               {RECIPIENTS.map(rc => (
-                <button key={rc} onClick={() => toggleRec(i, rc)} className={cn("text-[11px] font-medium px-2.5 py-1 rounded-lg border transition-all", r.recipients.includes(rc) ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300")}>{rc}</button>
+                <button key={rc} onClick={() => toggleRec(i, rc)} className={cn("text-[11px] font-medium px-2.5 py-1 rounded-lg border transition-all", r.recipients.includes(rc) ? "bg-primary text-white border-primary" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300")}>{rc}</button>
               ))}
             </div>
           </div>
