@@ -39,6 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-components/rfx/ResponsesView.tsx
-components/rfx/Wizard.tsx
-components/ui/datetime-picker.tsx
