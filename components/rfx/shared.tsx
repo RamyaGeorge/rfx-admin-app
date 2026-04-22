@@ -7,10 +7,9 @@ import { AlertTriangle, Info, CheckCircle2, XCircle } from "lucide-react";
 
 /* ── Type colours ─────────────────────────────────────────────────── */
 export const TYPE_COLORS: Record<EventType, { color: string; bg: string; ring: string }> = {
-  RFI: { color: "text-indigo-600", bg: "bg-indigo-50", ring: "ring-indigo-200" },
-  RFP: { color: "text-sky-600",    bg: "bg-sky-50",    ring: "ring-sky-200" },
-  RFQ: { color: "text-amber-600",  bg: "bg-amber-50",  ring: "ring-amber-200" },
-  RFT: { color: "text-teal-600",   bg: "bg-teal-50",   ring: "ring-teal-200" },
+  RFI:     { color: "text-indigo-600", bg: "bg-indigo-50", ring: "ring-indigo-200" },
+  RFP:     { color: "text-sky-600",    bg: "bg-sky-50",    ring: "ring-sky-200" },
+  RFQ:     { color: "text-amber-600",  bg: "bg-amber-50",  ring: "ring-amber-200" },
 };
 
 /* ── Type badge ───────────────────────────────────────────────────── */

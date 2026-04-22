@@ -119,7 +119,9 @@ export default function Home() {
           )}
 
           {view === "wizard" && (
-            <Wizard onNavigate={navigate} onPublish={handlePublish} />
+            <div className="h-full">
+              <Wizard onNavigate={navigate} onPublish={handlePublish} />
+            </div>
           )}
 
           {(view === "responses" || view === "eval" || view === "award") && (

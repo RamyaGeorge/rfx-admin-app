@@ -23,10 +23,10 @@ const KPI_CARDS = [
 ];
 
 const RECENT_ACTIVITY = [
-  { time: "2h ago",  text: "GlobeLux Industries submitted response for RFT-2025-0018", type: "submit" },
-  { time: "5h ago",  text: "Technical envelopes opened for RFT-2025-0018",             type: "open" },
+  { time: "2h ago",  text: "GlobeLux Industries submitted response for RFQ-2025-0018", type: "submit" },
+  { time: "5h ago",  text: "Financial envelopes opened for RFQ-2025-0018",             type: "open" },
   { time: "1d ago",  text: "RFP-2025-0017 published — 4 suppliers invited",           type: "publish" },
-  { time: "2d ago",  text: "Clarification answered for RFT-2025-0018 Q3",             type: "clarif" },
+  { time: "2d ago",  text: "Clarification answered for RFQ-2025-0018 Q3",             type: "clarif" },
   { time: "3d ago",  text: "Nova Electricals disqualified — score 65/100",            type: "disq" },
   { time: "4d ago",  text: "New RFI created: EV Charging Infrastructure Survey",      type: "create" },
 ];
@@ -182,7 +182,7 @@ export function Dashboard({ events, onNavigate }: DashboardProps) {
           </div>
           <div className="p-4 space-y-2.5">
             {[
-              { label: "Create new event",       sub: "RFI, RFP, RFQ, or RFT",       action: () => onNavigate("events"),    color: "text-sky-600",     bg: "bg-sky-50" },
+              { label: "Create new event",       sub: "RFI, RFP, or RFQ",   action: () => onNavigate("events"),    color: "text-sky-600",     bg: "bg-sky-50" },
               { label: "View open responses",    sub: "5 awaiting evaluation",        action: () => onNavigate("responses"), color: "text-indigo-600",  bg: "bg-indigo-50" },
               { label: "Manage suppliers",       sub: "28 registered suppliers",      action: () => onNavigate("suppliers"), color: "text-emerald-600", bg: "bg-emerald-50" },
               { label: "Browse templates",       sub: "12 reusable event templates",  action: () => onNavigate("templates"), color: "text-amber-600",   bg: "bg-amber-50" },

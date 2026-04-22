@@ -1,4 +1,11 @@
-export type EventType = "RFI" | "RFP" | "RFQ" | "RFT";
+export type EventType = "RFI" | "RFP" | "RFQ";
+
+export type EventFormat =
+  | "STANDARD"
+  | "LIST"
+  | "CHERRY_PICKING"
+  | "LOT"
+  | "BID_MATRIX";
 export type EventStatus =
   | "DRAFT"
   | "PUBLISHED"
@@ -155,6 +162,7 @@ export interface WizToggles {
 export interface WizState {
   step: number;
   type: EventType;
+  format: EventFormat;
   toggles: WizToggles;
   items: WizItem[];
   sections: WizSection[];

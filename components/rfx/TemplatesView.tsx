@@ -24,28 +24,27 @@ interface Template {
 }
 
 const TEMPLATES: Template[] = [
-  { id: 1,  name: "Annual Lighting Contract",      type: "RFT", category: "Electrical",    description: "Two-envelope tender for decorative & industrial lighting procurement with full BOQ.",           sections: 4, questions: 18, items: 12, lastUsed: "2 days ago",  usageCount: 8,  starred: true,  createdBy: "Priya Sharma" },
+  { id: 1,  name: "Annual Lighting Contract",      type: "RFQ", category: "Electrical",    description: "BOQ-based quotation for decorative & industrial lighting procurement.",                         sections: 4, questions: 18, items: 12, lastUsed: "2 days ago",  usageCount: 8,  starred: true,  createdBy: "Priya Sharma" },
   { id: 2,  name: "IT Hardware Refresh",           type: "RFQ", category: "Technology",    description: "Standard quotation template for annual IT hardware, peripherals and accessories refresh.",      sections: 3, questions: 10, items: 24, lastUsed: "1 week ago",  usageCount: 5,  starred: true,  createdBy: "Ravi Kumar" },
   { id: 3,  name: "Office Furniture Procurement",  type: "RFP", category: "Furniture",     description: "Proposal request for office furniture covering design, supply and installation.",               sections: 3, questions: 12, items: 8,  lastUsed: "3 weeks ago", usageCount: 3,  starred: false, createdBy: "Priya Sharma" },
   { id: 4,  name: "EV Charging Survey",            type: "RFI", category: "Infrastructure",description: "Market research questionnaire for EV charging infrastructure vendors and technology.",           sections: 2, questions: 15, items: 0,  lastUsed: "1 month ago", usageCount: 2,  starred: false, createdBy: "Anita Rao" },
-  { id: 5,  name: "Security Systems Tender",       type: "RFT", category: "Security",      description: "Formal two-envelope tender for campus security infrastructure including CCTV and access.",      sections: 5, questions: 22, items: 16, lastUsed: "2 months ago",usageCount: 4,  starred: true,  createdBy: "Priya Sharma" },
-  { id: 6,  name: "Civil Works BOQ",               type: "RFT", category: "Civil",         description: "Standard BOQ-based tender for civil construction and renovation works.",                       sections: 4, questions: 14, items: 30, lastUsed: "3 months ago",usageCount: 7,  starred: false, createdBy: "Ravi Kumar" },
+  { id: 5,  name: "Security Systems RFQ",           type: "RFQ", category: "Security",      description: "BOQ-based quotation for campus security infrastructure including CCTV and access control.",    sections: 5, questions: 22, items: 16, lastUsed: "2 months ago",usageCount: 4,  starred: true,  createdBy: "Priya Sharma" },
+  { id: 6,  name: "Civil Works BOQ",               type: "RFQ", category: "Civil",         description: "Standard BOQ quotation for civil construction and renovation works.",                          sections: 4, questions: 14, items: 30, lastUsed: "3 months ago",usageCount: 7,  starred: false, createdBy: "Ravi Kumar" },
   { id: 7,  name: "Cloud Services RFP",            type: "RFP", category: "Technology",    description: "Request for proposals covering cloud hosting, storage, and managed service providers.",        sections: 4, questions: 20, items: 6,  lastUsed: "1 week ago",  usageCount: 3,  starred: false, createdBy: "Anita Rao" },
   { id: 8,  name: "Catering Services RFQ",         type: "RFQ", category: "Facilities",    description: "Quotation template for corporate cafeteria and event catering services.",                       sections: 2, questions: 8,  items: 15, lastUsed: "5 days ago",  usageCount: 6,  starred: false, createdBy: "Priya Sharma" },
   { id: 9,  name: "Vendor Capability Survey",      type: "RFI", category: "General",       description: "Generic market intelligence form to assess new vendor capabilities and certifications.",        sections: 3, questions: 18, items: 0,  lastUsed: "2 weeks ago", usageCount: 9,  starred: true,  createdBy: "Ravi Kumar" },
-  { id: 10, name: "Annual Maintenance Contract",   type: "RFT", category: "Facilities",    description: "Multi-year AMC tender for electrical, mechanical, and civil maintenance works.",               sections: 5, questions: 25, items: 20, lastUsed: "4 months ago",usageCount: 5,  starred: false, createdBy: "Anita Rao" },
+  { id: 10, name: "Annual Maintenance Contract",   type: "RFQ", category: "Facilities",    description: "Multi-year AMC quotation for electrical, mechanical, and civil maintenance works.",            sections: 5, questions: 25, items: 20, lastUsed: "4 months ago",usageCount: 5,  starred: false, createdBy: "Anita Rao" },
   { id: 11, name: "Printing & Stationery RFQ",     type: "RFQ", category: "Office",        description: "Annual quotation for printing, stationery, and office consumables.",                           sections: 2, questions: 7,  items: 22, lastUsed: "3 weeks ago", usageCount: 4,  starred: false, createdBy: "Priya Sharma" },
   { id: 12, name: "Marketing Agency RFP",          type: "RFP", category: "Marketing",     description: "Full-service agency proposal covering digital, print, and event marketing.",                   sections: 4, questions: 16, items: 5,  lastUsed: "6 weeks ago", usageCount: 2,  starred: false, createdBy: "Ravi Kumar" },
 ];
 
-const TYPE_FILTER_TABS: Array<"ALL" | EventType> = ["ALL", "RFI", "RFP", "RFQ", "RFT"];
+const TYPE_FILTER_TABS: Array<"ALL" | EventType> = ["ALL", "RFI", "RFP", "RFQ"];
 const CATEGORIES = ["All", "Electrical", "Technology", "Furniture", "Infrastructure", "Security", "Civil", "Facilities", "General", "Office", "Marketing"];
 
 const TYPE_BG: Record<EventType, string> = {
-  RFI: "from-indigo-50 to-white border-indigo-100",
-  RFP: "from-sky-50 to-white border-sky-100",
-  RFQ: "from-amber-50 to-white border-amber-100",
-  RFT: "from-teal-50 to-white border-teal-100",
+  RFI:     "from-indigo-50 to-white border-indigo-100",
+  RFP:     "from-sky-50 to-white border-sky-100",
+  RFQ:     "from-amber-50 to-white border-amber-100",
 };
 
 export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) {
@@ -70,11 +69,10 @@ export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) 
   }
 
   const counts: Record<"ALL" | EventType, number> = {
-    ALL: templates.length,
-    RFI: templates.filter(t => t.type === "RFI").length,
-    RFP: templates.filter(t => t.type === "RFP").length,
-    RFQ: templates.filter(t => t.type === "RFQ").length,
-    RFT: templates.filter(t => t.type === "RFT").length,
+    ALL:     templates.length,
+    RFI:     templates.filter(t => t.type === "RFI").length,
+    RFP:     templates.filter(t => t.type === "RFP").length,
+    RFQ:     templates.filter(t => t.type === "RFQ").length,
   };
 
   return (

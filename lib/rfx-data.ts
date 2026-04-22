@@ -10,8 +10,8 @@ import type {
 export const EVENTS_LIST: RFXEvent[] = [
   {
     id: 1,
-    number: "RFT-2025-0018",
-    type: "RFT",
+    number: "RFQ-2025-0018",
+    type: "RFQ",
     title: "Annual Decorative Lighting Contract - Phase 2",
     status: "UNDER_EVALUATION",
     deadline: "30 Sep 2025",
@@ -50,8 +50,8 @@ export const EVENTS_LIST: RFXEvent[] = [
   },
   {
     id: 5,
-    number: "RFT-DRAFT-002",
-    type: "RFT",
+    number: "RFQ-DRAFT-002",
+    type: "RFQ",
     title: "Campus Security Infrastructure Upgrade",
     status: "DRAFT",
     deadline: "—",
@@ -62,8 +62,8 @@ export const EVENTS_LIST: RFXEvent[] = [
 
 export const ACTIVE_EVENT: ActiveEvent = {
   id: 1,
-  number: "RFT-2025-0018",
-  type: "RFT",
+  number: "RFQ-2025-0018",
+  type: "RFQ",
   title: "Annual Decorative Lighting Contract - Phase 2",
   status: "UNDER_EVALUATION",
   deadline: "30 Sep 2025",
@@ -261,7 +261,8 @@ export const SUPPLIER_CATALOGUE = [
 
 export const DEFAULT_WIZ_STATE: WizState = {
   step: 0,
-  type: "RFT",
+  type: "RFP",
+  format: "LIST",
   toggles: {
     nda_required: true,
     intent_to_participate_req: true,
@@ -307,11 +308,19 @@ export const DEFAULT_WIZ_STATE: WizState = {
   _inviteSelected: [],
 };
 
-export const TYPE_CONFIG = {
+export const TYPE_CONFIG: Record<string, {
+  color: string; bg: string; name: string; tagline: string;
+  steps: string[]; stepSubs: string[];
+  showItems: boolean; showPricing: boolean; showBidBond: boolean;
+  showTwoEnvelope: boolean; showSiteVisit: boolean; showTechFields: boolean; showEvalCriteria: boolean;
+  itemsLabel?: string; itemsNote?: string;
+  togglesToShow: string[];
+  infoBox?: string;
+}> = {
   RFI: {
     color: "#6366f1", bg: "#eef2ff", name: "Request for Information", tagline: "Market research – no pricing collected",
     steps: ["Event type", "Basic details", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ / RFT", "Title, dates, settings", "Specs & NDA", "Qualification questions", "Invite suppliers", "Schedule reminders", "Final check"],
+    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Specs & NDA", "Qualification questions", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: false, showPricing: false, showBidBond: false, showTwoEnvelope: false, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
     togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "price_negotiation_enabled"],
     infoBox: "RFI collects qualitative information only. No BOQ, no pricing, no bid bond. Questionnaire is the primary response mechanism.",
@@ -319,7 +328,7 @@ export const TYPE_CONFIG = {
   RFP: {
     color: "#0ea5e9", bg: "#e0f2fe", name: "Request for Proposal", tagline: "Proposals with pricing & methodology – weighted evaluation",
     steps: ["Event type", "Basic details", "Deliverables", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ / RFT", "Title, dates, settings", "Optional scope items", "Specs & T&Cs", "Evaluation questions", "Invite suppliers", "Schedule reminders", "Final check"],
+    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Optional scope items", "Specs & T&Cs", "Evaluation questions", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: true, showPricing: true, showBidBond: false, showTwoEnvelope: false, showSiteVisit: false, showTechFields: false, showEvalCriteria: true,
     itemsLabel: "Deliverables / scope items",
     itemsNote: "Deliverables are optional for RFP. Add items to request line-level pricing.",
@@ -329,21 +338,11 @@ export const TYPE_CONFIG = {
   RFQ: {
     color: "#f59e0b", bg: "#fef3c7", name: "Request for Quotation", tagline: "Competitive price comparison – BOQ mandatory",
     steps: ["Event type", "Basic details", "Line items (BOQ)", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ / RFT", "Title, dates, settings", "Mandatory BOQ & quantities", "Specs & T&Cs", "Optional questions", "Invite suppliers", "Schedule reminders", "Final check"],
+    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Mandatory BOQ & quantities", "Specs & T&Cs", "Optional questions", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: true, showPricing: true, showBidBond: true, showTwoEnvelope: false, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
     itemsLabel: "Line items / Bill of Quantities",
     itemsNote: "Line items are mandatory for RFQ. Suppliers will price each line.",
     togglesToShow: ["nda_required", "allow_supplier_attachments", "bid_bond_required", "price_negotiation_enabled"],
     infoBox: "RFQ requires a complete BOQ. Suppliers submit sealed unit prices per line item. Award goes to the L1 (lowest qualified price).",
   },
-  RFT: {
-    color: "#0d9488", bg: "#f0fdfa", name: "Request for Tender", tagline: "Formal two-envelope tender – technical gate + financial bid",
-    steps: ["Event type", "Basic details", "BOQ / Schedule", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ / RFT", "Title, dates & compliance", "Mandatory BOQ + specs", "Specs, NDA & T&Cs", "Technical qualification", "Invite suppliers", "Schedule reminders", "Final check"],
-    showItems: true, showPricing: true, showBidBond: true, showTwoEnvelope: true, showSiteVisit: true, showTechFields: true, showEvalCriteria: true,
-    itemsLabel: "BOQ / Schedule of rates",
-    itemsNote: "BOQ is mandatory for RFT. Each item must have item code, quantity, unit, and technical specification.",
-    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "bid_bond_required", "site_visit_required", "price_negotiation_enabled"],
-    infoBox: "RFT uses a two-envelope system: technical bids are evaluated before financial bids are opened. Only technically qualified suppliers advance to the financial stage.",
-  },
-} as const;
+};
