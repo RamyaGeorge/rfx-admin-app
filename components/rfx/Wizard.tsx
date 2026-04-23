@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,16 +9,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { InfoBox, ToggleRow, NotApplicable } from "./shared";
 import { SUPPLIER_CATALOGUE, TYPE_CONFIG, DEFAULT_WIZ_STATE } from "@/lib/rfx-data";
+import type { TemplateWizData } from "@/lib/rfx-data";
 import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView } from "@/lib/rfx-types";
 import {
   Check, ChevronLeft, ChevronRight, Plus, Search,
   GripVertical, X, CheckCircle2, FileSearch, LayoutList,
-  ShoppingCart, ArrowLeft, Sparkles, Loader2, Pencil, Trash2,
+  ShoppingCart, ArrowLeft, Sparkles, Loader2, Pencil, Trash2, LayoutTemplate,
 } from "lucide-react";
 
 interface WizardProps {
   onNavigate: (view: AppView) => void;
   onPublish: (wiz: WizState) => void;
+  template?: TemplateWizData;
 }
 
 const QTYPES = ["TEXT", "NUMERIC", "BOOLEAN", "SINGLE_CHOICE", "MULTI_CHOICE", "FILE_UPLOAD", "DATE"];
@@ -255,8 +257,22 @@ const AI_SUGGESTED_SECTIONS: Record<string, AISuggestedSection[]> = {
 /* ════════════════════════════════════════════════════════════════════
    Wizard shell
 ════════════════════════════════════════════════════════════════════ */
-export function Wizard({ onNavigate, onPublish }: WizardProps) {
-  const [wiz, setWiz] = useState<WizState>({ ...DEFAULT_WIZ_STATE, type: "RFP", format: "LIST" });
+function initFromTemplate(t: TemplateWizData): WizState {
+  return {
+    ...DEFAULT_WIZ_STATE,
+    type: t.type,
+    format: FORMAT_OPTIONS[t.type]?.[0]?.value ?? "LIST",
+    category: t.category,
+    sections: t.sections.map(s => ({ ...s, questions: s.questions.map(q => ({ ...q })) })),
+    items: t.items.map(i => ({ ...i })),
+    _templateName: t.name,
+  };
+}
+
+export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
+  const [wiz, setWiz] = useState<WizState>(() =>
+    template ? initFromTemplate(template) : { ...DEFAULT_WIZ_STATE, type: "RFP", format: "LIST" }
+  );
 
   const cfg = TYPE_CONFIG[wiz.type];
   const steps = cfg.steps;
@@ -469,9 +485,17 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   return (
     <div>
       <StepHeader title="Basic details" sub="Core event information visible to all invited suppliers." />
+      {wiz._templateName && (
+        <div className="flex items-center gap-2 mb-4 px-3.5 py-2.5 bg-primary/5 border border-primary/20 rounded-xl">
+          <LayoutTemplate size={13} className="text-primary flex-shrink-0" />
+          <span className="text-[12px] text-primary font-medium">
+            Pre-filled from template <strong>{wiz._templateName}</strong> — review and adjust as needed.
+          </span>
+        </div>
+      )}
       <Card>
         <Field label="Event title" required>
-          <Input defaultValue="Annual Decorative Lighting Contract" />
+          <Input defaultValue={wiz._templateName ?? "Annual Decorative Lighting Contract"} />
         </Field>
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Field label="Reference number">
@@ -679,15 +703,21 @@ function Step3({ wiz }: { wiz: WizState }) {
    Step 4 — Questionnaire
 ════════════════════════════════════════════════════════════════════ */
 function QuestionRow({
-  q, si, qi, onUpdate, onDelete,
+  q, si, qi, onUpdate, onDelete, defaultEditing = false, onEditOpened,
 }: {
   q: WizQuestion;
   si: number;
   qi: number;
   onUpdate: (si: number, qi: number, field: keyof WizQuestion, val: unknown) => void;
   onDelete: (si: number, qi: number) => void;
+  defaultEditing?: boolean;
+  onEditOpened?: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(defaultEditing);
+
+  // Notify parent once that this row has consumed the auto-open signal
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (defaultEditing) onEditOpened?.(); }, []);
   const [draft, setDraft] = useState({ text: q.text, qtype: q.qtype, mandatory: q.mandatory, scored: q.scored, weight: q.weight ?? 0 });
 
   function commitEdit() {
@@ -801,6 +831,7 @@ function QuestionRow({
 function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiDone, setAiDone] = useState(false);
+  const [newQId, setNewQId] = useState<number | null>(null);
 
   const canAISuggest = !!wiz.category && !!AI_SUGGESTED_SECTIONS[wiz.category];
 
@@ -814,7 +845,9 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     setWiz(w => ({ ...w, sections: w.sections.map((s, i) => i === si ? { ...s, [field]: val } : s) }));
   }
   function addQ(si: number) {
-    setWiz(w => ({ ...w, sections: w.sections.map((s, i) => i === si ? { ...s, questions: [...s.questions, { id: Date.now(), text: "", qtype: "TEXT", mandatory: false, scored: false, weight: 0 }] } : s) }));
+    const id = Date.now();
+    setNewQId(id);
+    setWiz(w => ({ ...w, sections: w.sections.map((s, i) => i === si ? { ...s, questions: [...s.questions, { id, text: "", qtype: "TEXT", mandatory: false, scored: false, weight: 0 }] } : s) }));
   }
   function delQ(si: number, qi: number) {
     setWiz(w => ({ ...w, sections: w.sections.map((s, i) => i === si ? { ...s, questions: s.questions.filter((_, j) => j !== qi) } : s) }));
@@ -940,7 +973,14 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
               <p className="text-[12px] text-slate-400 px-4 py-4">No questions yet. Click "Add question" to begin.</p>
             )}
             {sec.questions.map((q, qi) => (
-              <QuestionRow key={q.id} q={q} si={si} qi={qi} onUpdate={updateQ} onDelete={delQ} />
+              <QuestionRow
+                key={q.id}
+                q={q} si={si} qi={qi}
+                onUpdate={updateQ}
+                onDelete={delQ}
+                defaultEditing={q.id === newQId}
+                onEditOpened={() => setNewQId(null)}
+              />
             ))}
           </div>
         </div>
@@ -959,12 +999,7 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     ? catalogue.filter(s => s.name.toLowerCase().includes(wiz._inviteSearch!.toLowerCase()) || s.country.toLowerCase().includes(wiz._inviteSearch!.toLowerCase()))
     : catalogue;
 
-  const STATUS_STYLE: Record<string, string> = {
-    INVITED: "bg-indigo-50 text-indigo-600", ACCEPTED: "bg-emerald-50 text-emerald-600",
-    SUBMITTED: "bg-emerald-50 text-emerald-600", DECLINED: "bg-red-50 text-red-500",
-  };
-  const counts = { INVITED: 0, ACCEPTED: 0, SUBMITTED: 0, DECLINED: 0 };
-  wiz.participants.forEach(p => { if (p.status in counts) counts[p.status as keyof typeof counts]++; });
+  const INVITED_STYLE = "bg-indigo-50 text-indigo-600";
 
   function toggleSelect(name: string) {
     setWiz(w => { const sel = w._inviteSelected ?? []; return { ...w, _inviteSelected: sel.includes(name) ? sel.filter(n => n !== name) : [...sel, name] }; });
@@ -985,8 +1020,8 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        {[{ v: wiz.participants.length, l: "Total" }, { v: counts.INVITED, l: "Invited" }, { v: counts.ACCEPTED, l: "Accepted" }, { v: counts.SUBMITTED, l: "Submitted" }].map(({ v, l }) => (
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {[{ v: wiz.participants.length, l: "Total invited" }, { v: wiz.participants.length, l: "Pending (notified on publish)" }].map(({ v, l }) => (
           <div key={l} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
             <div className="text-[22px] font-bold text-slate-900">{v}</div>
             <div className="text-[11px] text-slate-400 mt-0.5">{l}</div>
@@ -1059,7 +1094,7 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                     <td className="px-4 py-3 text-[13px] font-medium text-slate-800">{p.name}</td>
                     <td className="px-4 py-3 text-[12px] text-slate-400 font-mono">{p.country}</td>
                     <td className="px-4 py-3">
-                      <span className={cn("text-[11px] font-semibold px-2.5 py-1 rounded-lg", STATUS_STYLE[p.status] ?? "bg-slate-100 text-slate-500")}>{p.status}</span>
+                      <span className={cn("text-[11px] font-semibold px-2.5 py-1 rounded-lg", INVITED_STYLE)}>INVITED</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => setWiz(w => ({ ...w, participants: w.participants.filter((_, i) => i !== pi) }))} className="text-[11px] text-slate-400 hover:text-red-500 transition-colors">Remove</button>

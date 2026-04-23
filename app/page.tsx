@@ -6,9 +6,12 @@ import { Dashboard } from "@/components/rfx/Dashboard";
 import { EventsList } from "@/components/rfx/EventsList";
 import { Wizard } from "@/components/rfx/Wizard";
 import { ResponsesView } from "@/components/rfx/ResponsesView";
+import { EventDetailView } from "@/components/rfx/EventDetailView";
+import { EventPreviewView } from "@/components/rfx/EventPreviewView";
 import { SuppliersView } from "@/components/rfx/SuppliersView";
 import { TemplatesView } from "@/components/rfx/TemplatesView";
-import { CreateEventModal, type CreateMode } from "@/components/rfx/CreateEventModal";
+import { CreateEventModal } from "@/components/rfx/CreateEventModal";
+import type { TemplateWizData } from "@/lib/rfx-data";
 import {
   EVENTS_LIST as INITIAL_EVENTS,
   ACTIVE_EVENT as INITIAL_ACTIVE,
@@ -27,6 +30,7 @@ import { Button } from "@/components/ui/button";
 const TOP_LABELS: Partial<Record<AppView, string>> = {
   dashboard: "Dashboard",
   events:    "Events",
+  event:     "",          // set dynamically from activeEvent
   wizard:    "Create event",
   responses: "",          // set dynamically
   eval:      "Evaluate",
@@ -66,12 +70,14 @@ export default function Home() {
   const [publishedType,  setPublishedType]  = useState("");
   const [publishedCount, setPublishedCount] = useState(0);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [wizardTemplate, setWizardTemplate] = useState<TemplateWizData | undefined>(undefined);
 
   function navigate(v: AppView) { setView(v); }
 
   function handleCreateEvent() { setCreateModalOpen(true); }
 
-  function handleCreateModalConfirm() {
+  function handleCreateModalConfirm(template?: TemplateWizData) {
+    setWizardTemplate(template);
     setCreateModalOpen(false);
     setView("wizard");
   }
@@ -106,10 +112,10 @@ export default function Home() {
   }
 
   /* breadcrumb label */
-  const pageLabel = view === "responses" ? activeEvent.number : (TOP_LABELS[view] ?? view);
+  const pageLabel = (view === "responses" || view === "event" || view === "event-preview") ? activeEvent.number : (TOP_LABELS[view] ?? view);
 
   /* views that live under Events in the breadcrumb */
-  const underEvents = ["wizard", "responses", "eval", "award", "clarif"].includes(view);
+  const underEvents = ["wizard", "event", "event-preview", "responses", "eval", "award", "clarif"].includes(view);
   /* views that live under Responses in the breadcrumb */
   const underResponses = ["eval", "award"].includes(view);
 
@@ -153,7 +159,12 @@ export default function Home() {
             <EventsList
               events={events}
               onCreateEvent={handleCreateEvent}
-              onOpenEvent={(id) => {
+              onViewEvent={(id) => {
+                const ev = events.find(e => e.id === id);
+                if (ev) switchEvent(ev);
+                navigate("event-preview");
+              }}
+              onEvaluateEvent={(id) => {
                 const ev = events.find(e => e.id === id);
                 if (ev) switchEvent(ev);
                 navigate("responses");
@@ -162,9 +173,36 @@ export default function Home() {
             />
           )}
 
+          {view === "event" && (
+            <div className="h-full overflow-y-auto">
+              <EventDetailView
+                event={activeEvent}
+                responses={responses}
+                clarifications={clarifications}
+                onNavigate={navigate}
+                onViewEvent={() => navigate("event-preview")}
+              />
+            </div>
+          )}
+
+          {view === "event-preview" && (
+            <div className="h-full">
+              <EventPreviewView
+                event={activeEvent}
+                responses={responses}
+                onBack={() => navigate("events")}
+                onViewResponses={() => navigate("responses")}
+              />
+            </div>
+          )}
+
           {view === "wizard" && (
             <div className="h-full">
-              <Wizard onNavigate={navigate} onPublish={handlePublish} />
+              <Wizard
+                onNavigate={(v) => { setWizardTemplate(undefined); navigate(v); }}
+                onPublish={handlePublish}
+                template={wizardTemplate}
+              />
             </div>
           )}
 

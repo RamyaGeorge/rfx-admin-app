@@ -19,11 +19,12 @@ const FILTER_TABS: { key: "ALL" | EventStatus; label: string }[] = [
 interface EventsListProps {
   events: RFXEvent[];
   onCreateEvent: () => void;
-  onOpenEvent: (id: number) => void;
+  onViewEvent: (id: number) => void;
+  onEvaluateEvent: (id: number) => void;
   onEditDraft: (id: number) => void;
 }
 
-export function EventsList({ events, onCreateEvent, onOpenEvent, onEditDraft }: EventsListProps) {
+export function EventsList({ events, onCreateEvent, onViewEvent, onEvaluateEvent, onEditDraft }: EventsListProps) {
   const [filter, setFilter] = useState<"ALL" | EventStatus>("ALL");
 
   const filtered = filter === "ALL" ? events : events.filter((e) => e.status === filter);
@@ -76,7 +77,7 @@ export function EventsList({ events, onCreateEvent, onOpenEvent, onEditDraft }: 
             return (
               <div
                 key={ev.id}
-                onClick={() => isDraft ? onEditDraft(ev.id) : onOpenEvent(ev.id)}
+                onClick={() => isDraft ? onEditDraft(ev.id) : ev.status === "UNDER_EVALUATION" ? onEvaluateEvent(ev.id) : onViewEvent(ev.id)}
                 className={cn(
                   "bg-white border border-slate-200 rounded-xl px-5 py-4 flex items-center gap-3.5 cursor-pointer transition-all hover:border-slate-300 hover:shadow-md",
                   isDraft && "border-l-4 border-l-slate-300 opacity-85",
@@ -128,9 +129,9 @@ export function EventsList({ events, onCreateEvent, onOpenEvent, onEditDraft }: 
                       <PenLine size={12} /> Edit draft
                     </Button>
                   ) : ev.status === "UNDER_EVALUATION" ? (
-                    <Button size="sm" onClick={() => onOpenEvent(ev.id)}>Evaluate</Button>
+                    <Button size="sm" onClick={() => onEvaluateEvent(ev.id)}>Evaluate</Button>
                   ) : !isCancelled ? (
-                    <Button size="sm" variant="outline" onClick={() => onOpenEvent(ev.id)}>View</Button>
+                    <Button size="sm" variant="outline" onClick={() => onViewEvent(ev.id)}>View</Button>
                   ) : null}
                 </div>
               </div>

@@ -5,6 +5,8 @@ import type {
   Clarification,
   EvalCriterion,
   WizState,
+  WizSection,
+  WizItem,
 } from "./rfx-types";
 
 export const EVENTS_LIST: RFXEvent[] = [
@@ -507,10 +509,10 @@ export const DEFAULT_WIZ_STATE: WizState = {
     },
   ],
   participants: [
-    { id: 1, name: "ABC Lighting Co.", country: "IN", status: "SUBMITTED" },
-    { id: 2, name: "GlobeLux Industries", country: "DE", status: "ACCEPTED" },
+    { id: 1, name: "ABC Lighting Co.", country: "IN", status: "INVITED" },
+    { id: 2, name: "GlobeLux Industries", country: "DE", status: "INVITED" },
     { id: 3, name: "Nova Electricals", country: "IN", status: "INVITED" },
-    { id: 4, name: "LightWave Solutions", country: "SG", status: "DECLINED" },
+    { id: 4, name: "LightWave Solutions", country: "SG", status: "INVITED" },
   ],
   reminders: [
     { id: 1, headline: "Submission Deadline – 48h remaining", scheduled: "28 Sep 2025, 09:00", recipients: ["SUPPLIER"], sent: false, excl_sub: true },
@@ -520,6 +522,153 @@ export const DEFAULT_WIZ_STATE: WizState = {
   _inviteSearch: "",
   _inviteSelected: [],
 };
+
+export interface TemplateWizData {
+  id: number;
+  name: string;
+  type: "RFI" | "RFP" | "RFQ";
+  category: string;
+  description: string;
+  sections: WizSection[];
+  items: WizItem[];
+}
+
+export const TEMPLATE_WIZ_DATA: TemplateWizData[] = [
+  {
+    id: 1, name: "Annual Lighting Contract", type: "RFQ",
+    category: "Electrical & Instrumentation",
+    description: "BOQ-based quotation for decorative & industrial lighting procurement.",
+    items: [
+      { id: 101, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
+      { id: 102, item_code: "LT-LED-002",   description: "LED Retrofit Bulb 10W E27", quantity: "2000", unit: "PCS", target_price: "180.00", technical_spec: "10W, E27 base, 4000K", required_by: "2026-01-20" },
+      { id: 103, item_code: "LT-PAN-003",   description: "LED Panel Light 600×600mm", quantity: "300", unit: "PCS", target_price: "2500.00", technical_spec: "40W, 4000K, IP20", required_by: "2026-01-25" },
+    ],
+    sections: [
+      { id: 201, title: "Technical Compliance", type: "TECHNICAL", mandatory: true, questions: [
+        { id: 301, text: "Upload Material Certification (IS 9900:2002)", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+        { id: 302, text: "Warranty period offered (months)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 15 },
+        { id: 303, text: "Manufacturing facility location", qtype: "SINGLE_CHOICE", mandatory: true, scored: true, weight: 10, options: ["India", "China", "Europe", "Other"] },
+        { id: 304, text: "Confirm IS/IEC compliance for all items", qtype: "BOOLEAN", mandatory: true, scored: false },
+      ]},
+      { id: 202, title: "Company Profile", type: "GENERAL", mandatory: true, questions: [
+        { id: 305, text: "Years in lighting manufacturing / supply", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+        { id: 306, text: "Upload GST registration certificate", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+        { id: 307, text: "Provide list of 3 reference clients with purchase value", qtype: "TEXT", mandatory: true, scored: false },
+      ]},
+      { id: 203, title: "HSE", type: "HSE", mandatory: false, questions: [
+        { id: 308, text: "Describe packaging and transport safety measures", qtype: "TEXT", mandatory: false, scored: false },
+      ]},
+      { id: 204, title: "Financial", type: "FINANCIAL", mandatory: true, questions: [
+        { id: 309, text: "State payment terms required", qtype: "TEXT", mandatory: true, scored: false },
+        { id: 310, text: "Confirm ability to supply within lead time", qtype: "BOOLEAN", mandatory: true, scored: true, weight: 10 },
+      ]},
+    ],
+  },
+  {
+    id: 2, name: "IT Hardware Refresh", type: "RFQ",
+    category: "IT & Software",
+    description: "Standard quotation template for annual IT hardware, peripherals and accessories refresh.",
+    items: [
+      { id: 111, item_code: "IT-LAP-001", description: "Business Laptop 14\" Intel i7", quantity: "50", unit: "NOS", target_price: "75000.00", technical_spec: "i7-13th Gen, 16GB RAM, 512GB SSD", required_by: "2026-02-01" },
+      { id: 112, item_code: "IT-MON-002", description: "27\" 4K Monitor",              quantity: "60", unit: "NOS", target_price: "35000.00", technical_spec: "27\" 4K UHD IPS, USB-C",             required_by: "2026-02-01" },
+      { id: 113, item_code: "IT-DOK-003", description: "USB-C Docking Station",         quantity: "50", unit: "NOS", target_price: "12000.00", technical_spec: "Dual display, Ethernet, USB-A/C",    required_by: "2026-02-15" },
+    ],
+    sections: [
+      { id: 211, title: "Technical Specifications", type: "TECHNICAL", mandatory: true, questions: [
+        { id: 311, text: "Confirm all items meet stated technical specifications", qtype: "BOOLEAN", mandatory: true, scored: false },
+        { id: 312, text: "Warranty period for each product category (months)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 20 },
+        { id: 313, text: "Upload OEM authorisation certificate", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+        { id: 314, text: "State on-site support response time (hours)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 15 },
+      ]},
+      { id: 212, title: "Company Profile", type: "GENERAL", mandatory: true, questions: [
+        { id: 315, text: "Years as authorised IT hardware reseller", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+        { id: 316, text: "Provide last 3 years of similar purchase orders", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      ]},
+      { id: 213, title: "Financial", type: "FINANCIAL", mandatory: true, questions: [
+        { id: 317, text: "Confirm GST-inclusive pricing in BOQ", qtype: "BOOLEAN", mandatory: true, scored: false },
+        { id: 318, text: "State credit terms offered", qtype: "TEXT", mandatory: true, scored: false },
+      ]},
+    ],
+  },
+  {
+    id: 3, name: "Office Furniture Procurement", type: "RFP",
+    category: "Facility Management",
+    description: "Proposal request for office furniture covering design, supply and installation.",
+    items: [
+      { id: 121, item_code: "FN-DSK-001", description: "Executive Workstation Desk",  quantity: "80",  unit: "NOS", target_price: "18000.00", technical_spec: "1800×900mm, pre-laminated board",  required_by: "2026-03-01" },
+      { id: 122, item_code: "FN-CHR-002", description: "Ergonomic Office Chair",       quantity: "100", unit: "NOS", target_price: "12000.00", technical_spec: "Mesh back, lumbar support, BIFMA", required_by: "2026-03-01" },
+    ],
+    sections: [
+      { id: 221, title: "Design & Scope", type: "TECHNICAL", mandatory: true, questions: [
+        { id: 321, text: "Upload proposed floor plan / space layout", qtype: "FILE_UPLOAD", mandatory: true, scored: true, weight: 20 },
+        { id: 322, text: "Describe materials and finish options", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+        { id: 323, text: "Confirm installation included in scope", qtype: "BOOLEAN", mandatory: true, scored: false },
+      ]},
+      { id: 222, title: "Company Profile", type: "GENERAL", mandatory: true, questions: [
+        { id: 324, text: "Years supplying commercial office furniture", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+        { id: 325, text: "Upload portfolio of completed projects", qtype: "FILE_UPLOAD", mandatory: true, scored: true, weight: 15 },
+      ]},
+      { id: 223, title: "Compliance", type: "COMPLIANCE", mandatory: false, questions: [
+        { id: 326, text: "Confirm BIFMA / IS furniture standards compliance", qtype: "BOOLEAN", mandatory: true, scored: false },
+      ]},
+    ],
+  },
+  {
+    id: 4, name: "EV Charging Survey", type: "RFI",
+    category: "Construction & Civil",
+    description: "Market research questionnaire for EV charging infrastructure vendors and technology.",
+    items: [],
+    sections: [
+      { id: 231, title: "Technology & Products", type: "TECHNICAL", mandatory: true, questions: [
+        { id: 331, text: "List EV charging models offered (AC/DC, kW ratings)", qtype: "TEXT", mandatory: true, scored: false },
+        { id: 332, text: "Describe network management / OCPP compliance", qtype: "TEXT", mandatory: true, scored: false },
+        { id: 333, text: "Upload product datasheet for flagship model", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+        { id: 334, text: "Do you support dynamic load management?", qtype: "BOOLEAN", mandatory: true, scored: false },
+      ]},
+      { id: 232, title: "Company Profile", type: "GENERAL", mandatory: true, questions: [
+        { id: 335, text: "Years in EV charging infrastructure business", qtype: "NUMERIC", mandatory: true, scored: false },
+        { id: 336, text: "Total chargers deployed in India", qtype: "NUMERIC", mandatory: true, scored: false },
+        { id: 337, text: "List key clients with charger count", qtype: "TEXT", mandatory: true, scored: false },
+        { id: 338, text: "Provide service network coverage by state", qtype: "TEXT", mandatory: false, scored: false },
+      ]},
+    ],
+  },
+  {
+    id: 5, name: "Security Systems RFQ", type: "RFQ",
+    category: "Construction & Civil",
+    description: "BOQ-based quotation for campus security infrastructure including CCTV and access control.",
+    items: [
+      { id: 131, item_code: "SC-CAM-001", description: "IP Dome Camera 4MP",       quantity: "120", unit: "NOS", target_price: "8500.00",  technical_spec: "4MP, IR 30m, IP66, H.265",       required_by: "2026-02-15" },
+      { id: 132, item_code: "SC-NVR-002", description: "32-channel NVR",            quantity: "5",   unit: "NOS", target_price: "95000.00", technical_spec: "32ch, 4K decode, RAID",          required_by: "2026-02-15" },
+      { id: 133, item_code: "SC-ACC-003", description: "Access Control Reader",     quantity: "40",  unit: "NOS", target_price: "12000.00", technical_spec: "RFID + PIN, Wiegand, IP65",       required_by: "2026-03-01" },
+      { id: 134, item_code: "SC-CTR-004", description: "Access Control Controller", quantity: "10",  unit: "NOS", target_price: "25000.00", technical_spec: "4-door, TCP/IP, backup battery",  required_by: "2026-03-01" },
+    ],
+    sections: [
+      { id: 241, title: "Technical Compliance", type: "TECHNICAL", mandatory: true, questions: [
+        { id: 341, text: "Confirm all equipment meets stated technical specifications", qtype: "BOOLEAN", mandatory: true, scored: false },
+        { id: 342, text: "Warranty period offered (months)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 15 },
+        { id: 343, text: "Upload product datasheets for all major items", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+        { id: 344, text: "Describe VMS / PSIM integration capability", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      ]},
+      { id: 242, title: "Installation & Commissioning", type: "TECHNICAL", mandatory: true, questions: [
+        { id: 345, text: "Proposed installation timeline (weeks from PO)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+        { id: 346, text: "Confirm commissioning and operator training included", qtype: "BOOLEAN", mandatory: true, scored: false },
+      ]},
+      { id: 243, title: "Compliance", type: "COMPLIANCE", mandatory: true, questions: [
+        { id: 347, text: "Confirm BIS / ONVIF certification for cameras", qtype: "BOOLEAN", mandatory: true, scored: false },
+        { id: 348, text: "Upload valid electrical contractor license", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      ]},
+      { id: 244, title: "Company Profile", type: "GENERAL", mandatory: true, questions: [
+        { id: 349, text: "Years in security system integration", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+        { id: 350, text: "Number of cameras installed in last 3 years", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      ]},
+      { id: 245, title: "Financial", type: "FINANCIAL", mandatory: true, questions: [
+        { id: 351, text: "Confirm AMC pricing quoted separately", qtype: "BOOLEAN", mandatory: true, scored: false },
+        { id: 352, text: "State payment milestone terms", qtype: "TEXT", mandatory: true, scored: false },
+      ]},
+    ],
+  },
+];
 
 export const TYPE_CONFIG: Record<string, {
   color: string; bg: string; name: string; tagline: string;

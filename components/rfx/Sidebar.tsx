@@ -25,7 +25,7 @@ interface SidebarProps {
 
 export function Sidebar({ activeView, onNavigate }: SidebarProps) {
   const isActive = (item: NavItem) => {
-    if (item.id === "events")    return activeView === "events" || activeView === "wizard";
+    if (item.id === "events")    return activeView === "events" || activeView === "event" || activeView === "event-preview" || activeView === "wizard";
     if (item.id === "responses") return ["responses", "eval", "clarif", "award"].includes(activeView);
     return false;
   };

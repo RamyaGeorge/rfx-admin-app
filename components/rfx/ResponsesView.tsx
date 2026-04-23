@@ -35,6 +35,7 @@ export function ResponsesView({
 }: ResponsesViewProps) {
   const [tab, setTab] = useState<RespTab>("responses");
   const [subView, setSubView] = useState<AppSubView>("list");
+  const [awardPreselect, setAwardPreselect] = useState<number | undefined>(undefined);
   const [evalSupplier, setEvalSupplier] = useState<SupplierResponse | null>(null);
   const [scores, setScores] = useState<Record<string, { score: string; pf: "PASS" | "FAIL" | null; comment: string }>>({});
   const [clarifOpen, setClarifOpen] = useState<number | null>(null);
@@ -51,12 +52,14 @@ export function ResponsesView({
     return (
       <AwardPage
         responses={responses}
-        onBack={() => setSubView("list")}
+        preselectedId={awardPreselect}
+        onBack={() => { setSubView("list"); setAwardPreselect(undefined); }}
         onConfirm={(suppId, _amount, _notes) => {
           const updated = responses.map(r => ({ ...r, is_awarded: r.id === suppId }));
           onUpdateResponses(updated);
           onUpdateEvent({ status: "AWARDED" });
           setSubView("list");
+          setAwardPreselect(undefined);
         }}
       />
     );
@@ -151,7 +154,7 @@ export function ResponsesView({
           </Button>
           {hasFinancial && event.status !== "CANCELLED" && event.status !== "AWARDED" && (
             finOpened
-              ? <Button size="sm" onClick={() => setSubView("award")} className="gap-1.5">
+              ? <Button size="sm" onClick={() => { setAwardPreselect(undefined); setSubView("award"); }} className="gap-1.5">
                   <Award size={13} /> Award contract
                 </Button>
               : <Button size="sm" onClick={() => handleOpenEnvelopes()} className="gap-1.5">
@@ -225,7 +228,7 @@ export function ResponsesView({
               onOpenEnvelopes={handleOpenEnvelopes} />
           )}
           {validTab === "financial" && finOpened && (
-            <FinancialTab qualified={qualified} event={event} onAward={() => setSubView("award")} />
+            <FinancialTab qualified={qualified} event={event} onAward={(suppId) => { setAwardPreselect(suppId); setSubView("award"); }} />
           )}
           {validTab === "clarifications" && (
             <ClarificationsTab clarifications={clarifications} filter={clarifFilter}
@@ -430,7 +433,7 @@ function EvaluationTab({ responses, qualified, minQual, onEval, onOpenEnvelopes 
 
 /* ── Financial tab ──────────────────────────────────────────────── */
 function FinancialTab({ qualified, event, onAward }: {
-  qualified: SupplierResponse[]; event: ActiveEvent; onAward: () => void;
+  qualified: SupplierResponse[]; event: ActiveEvent; onAward: (suppId?: number) => void;
 }) {
   const opened = qualified.filter(r => r.fin_env === "OPENED");
   if (opened.length === 0) {
@@ -478,7 +481,7 @@ function FinancialTab({ qualified, event, onAward }: {
               <td className="px-3 py-3"><StatusBadge status="OPENED" /></td>
               <td className="px-3 py-3">
                 {event.status !== "AWARDED" && event.status !== "CANCELLED" && (
-                  <Button size="sm" className="h-7 text-[12px]" onClick={onAward}>Award contract</Button>
+                  <Button size="sm" className="h-7 text-[12px]" onClick={() => onAward(r.id)}>Award contract</Button>
                 )}
                 {r.is_awarded && <StatusBadge status="AWARDED" />}
               </td>
@@ -805,8 +808,9 @@ function EvalPage({ supplier, criteria, scores, minQual, onBack, onSave, setScor
 }
 
 /* ── Award page ─────────────────────────────────────────────────── */
-function AwardPage({ responses, onBack, onConfirm }: {
+function AwardPage({ responses, preselectedId, onBack, onConfirm }: {
   responses: SupplierResponse[];
+  preselectedId?: number;
   onBack: () => void;
   onConfirm: (suppId: number, amount: string, notes: string) => void;
 }) {
@@ -814,8 +818,10 @@ function AwardPage({ responses, onBack, onConfirm }: {
   const sorted = qualified.filter(r => r.fin_env === "OPENED").sort((a, b) => (a.fin_env_amount ?? 0) - (b.fin_env_amount ?? 0));
   const l1 = sorted[0];
 
-  const [selectedId, setSelectedId] = useState<number>(qualified[0]?.id ?? 0);
-  const [amount, setAmount] = useState(l1?.fin_env_amount?.toLocaleString("en-IN") ?? "");
+  const defaultId = preselectedId ?? l1?.id ?? qualified[0]?.id ?? 0;
+  const [selectedId, setSelectedId] = useState<number>(defaultId);
+  const selectedSupplier = qualified.find(r => r.id === selectedId);
+  const [amount, setAmount] = useState(selectedSupplier?.fin_env_amount?.toLocaleString("en-IN") ?? l1?.fin_env_amount?.toLocaleString("en-IN") ?? "");
   const [notes, setNotes] = useState("L1 qualified bid meeting all technical requirements. Recommended by evaluation committee on 18 Oct 2025.");
   const [startDate, setStartDate] = useState("2025-11-01");
   const [duration, setDuration] = useState("24");
@@ -831,8 +837,11 @@ function AwardPage({ responses, onBack, onConfirm }: {
       </div>
 
       {l1 && (
-        <InfoBox variant="green">
-          <strong>Recommended: {l1.supplier}</strong> — L1 bid of ₹{l1.fin_env_amount?.toLocaleString("en-IN")} with a technical score of {l1.tech_score}/100. This supplier meets the minimum qualification threshold.
+        <InfoBox variant={selectedId === l1.id ? "green" : "blue"}>
+          {selectedId === l1.id
+            ? <><strong>L1 Recommended: {l1.supplier}</strong> — Lowest bid of ₹{l1.fin_env_amount?.toLocaleString("en-IN")} with a technical score of {l1.tech_score}/100.</>
+            : <><strong>Non-L1 selection:</strong> You are awarding to <strong>{selectedSupplier?.supplier}</strong> instead of the L1 supplier ({l1.supplier}). Provide justification below.</>
+          }
         </InfoBox>
       )}
 
@@ -841,7 +850,14 @@ function AwardPage({ responses, onBack, onConfirm }: {
         <div className="grid grid-cols-2 gap-3.5 mb-3.5">
           <div className="flex flex-col gap-1">
             <label className="text-[12px] font-medium text-slate-600">Award to supplier <span className="text-red-500">*</span></label>
-            <select value={selectedId} onChange={e => setSelectedId(parseInt(e.target.value))}
+            <select
+              value={selectedId}
+              onChange={e => {
+                const id = parseInt(e.target.value);
+                setSelectedId(id);
+                const supp = qualified.find(r => r.id === id);
+                if (supp?.fin_env_amount) setAmount(supp.fin_env_amount.toLocaleString("en-IN"));
+              }}
               className="w-full px-2.5 py-2 border border-slate-200 rounded-md text-[13px] bg-white">
               {qualified.map(r => (
                 <option key={r.id} value={r.id}>

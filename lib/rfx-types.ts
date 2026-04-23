@@ -173,6 +173,7 @@ export interface WizState {
   _inviteOpen?: boolean;
   _inviteSearch?: string;
   _inviteSelected?: string[];
+  _templateName?: string;
 }
 
 export interface ScoreEntry {
@@ -192,6 +193,8 @@ export interface RespState {
 export type AppView =
   | "dashboard"
   | "events"
+  | "event"
+  | "event-preview"
   | "wizard"
   | "responses"
   | "eval"
