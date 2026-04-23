@@ -543,6 +543,16 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                   <option>EUR – Euro</option>
                 </select>
               </Field>
+              <Field label="Bid validity (days)" required>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 90"
+                  value={wiz.bidValidityDays ?? ""}
+                  onChange={e => setWiz(w => ({ ...w, bidValidityDays: parseInt(e.target.value) || undefined }))}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Number of days suppliers must hold their quoted price.</p>
+              </Field>
             </div>
           </Card>
         </>
@@ -593,6 +603,16 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
               <Field label="Min. qualification score (%)">
                 <Input type="number" defaultValue="70" min={0} max={100} />
                 <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from price comparison.</p>
+              </Field>
+              <Field label="Bid validity (days)" required>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 90"
+                  value={wiz.bidValidityDays ?? ""}
+                  onChange={e => setWiz(w => ({ ...w, bidValidityDays: parseInt(e.target.value) || undefined }))}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Number of days suppliers must hold their quoted price.</p>
               </Field>
             </div>
           </Card>
@@ -1448,6 +1468,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     { label: "Event name",    value: "Annual Decorative Lighting Contract" },
     { label: "Deadline",      value: "30 Sep 2026" },
     ...(cfg.showPricing ? [{ label: "Est. value", value: "₹50,00,000" }] : []),
+    ...(cfg.showPricing ? [{ label: "Bid validity", value: wiz.bidValidityDays ? `${wiz.bidValidityDays} days` : "—" }] : []),
     { label: wiz.type === "RFQ" ? "BOQ items" : "Line items",
       value: cfg.showItems ? `${wiz.items.length} items${total > 0 ? ` / ₹${total.toLocaleString("en-IN")}` : ""}` : "N/A" },
     ...(wiz.type === "RFP" ? [{ label: "Award basis", value: "Weighted technical + commercial score" }] : []),

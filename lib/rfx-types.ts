@@ -190,6 +190,7 @@ export interface WizState {
   techWeight?: number;
   commercialWeight?: number;
   taxInclusive?: boolean;
+  bidValidityDays?: number;
 }
 
 export interface ScoreEntry {
