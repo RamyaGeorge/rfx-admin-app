@@ -521,6 +521,11 @@ export const DEFAULT_WIZ_STATE: WizState = {
   _inviteOpen: false,
   _inviteSearch: "",
   _inviteSelected: [],
+  techWeight: 70,
+  commercialWeight: 30,
+  taxInclusive: false,
+  siteVisitDate: "",
+  siteVisitLocation: "",
 };
 
 export interface TemplateWizData {
@@ -694,7 +699,7 @@ export const TYPE_CONFIG: Record<string, {
     showItems: true, showPricing: true, showBidBond: false, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: true,
     itemsLabel: "Deliverables / scope items",
     itemsNote: "Deliverables are optional for RFP. Add items to request line-level pricing from suppliers.",
-    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "price_negotiation_enabled"],
+    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "site_visit_required", "price_negotiation_enabled"],
     infoBox: "RFP collects detailed proposals with pricing, methodology, and team qualifications. Award is based on weighted technical + commercial score.",
   },
   RFQ: {
@@ -704,7 +709,7 @@ export const TYPE_CONFIG: Record<string, {
     showItems: true, showPricing: true, showBidBond: true, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
     itemsLabel: "Line items / Bill of Quantities (BOQ)",
     itemsNote: "BOQ is mandatory for RFQ. Suppliers must quote a unit price for every line item.",
-    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "bid_bond_required"],
+    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "bid_bond_required", "site_visit_required"],
     infoBox: "RFQ requires a complete BOQ. Suppliers submit sealed unit prices per line. Award goes to the L1 (lowest qualified bid). Price negotiation is not applicable.",
   },
 };

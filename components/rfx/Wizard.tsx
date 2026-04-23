@@ -37,6 +37,7 @@ const TOGGLE_DEFS: Record<string, { label: string; sub: string }> = {
   allow_supplier_attachments: { label: "Allow supplier attachments",sub: "Suppliers can upload supporting documents with their response." },
   two_envelope_system:        { label: "Two-envelope system",       sub: "Technical and financial bids are sealed separately and opened in sequence." },
   bid_bond_required:          { label: "Bid bond required",         sub: "Suppliers must submit a bid security / earnest money deposit." },
+  site_visit_required:        { label: "Site visit required",       sub: "Suppliers must attend a mandatory site visit or pre-bid meeting." },
   price_negotiation_enabled:  { label: "Enable price negotiation",  sub: "Buyers can negotiate pricing post-evaluation." },
 };
 
@@ -553,8 +554,11 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           <Card>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Technical weight (%)">
-                <Input type="number" defaultValue="70" min={0} max={100} />
-                <p className="text-[11px] text-slate-400 mt-1">Remaining 30% is commercial weight.</p>
+                <Input type="number" value={wiz.techWeight} onChange={e => {
+                  const t = parseInt(e.target.value) || 0;
+                  setWiz(w => ({ ...w, techWeight: t, commercialWeight: 100 - t }));
+                }} min={0} max={100} />
+                <p className="text-[11px] text-slate-400 mt-1">Remaining {wiz.commercialWeight}% is commercial weight.</p>
               </Field>
               <Field label="Min. qualification score (%)">
                 <Input type="number" defaultValue="70" min={0} max={100} />
@@ -618,6 +622,14 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                   </div>
                 </div>
               )}
+              {k === "site_visit_required" && on && (
+                <div className="mx-5 mb-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Date & Time"><DateTimePicker value={wiz.siteVisitDate} onChange={val => setWiz(w => ({ ...w, siteVisitDate: val }))} /></Field>
+                    <Field label="Location / Virtual Link"><Input value={wiz.siteVisitLocation} onChange={e => setWiz(w => ({ ...w, siteVisitLocation: e.target.value }))} placeholder="e.g. HQ Lobby or Teams link" /></Field>
+                  </div>
+                </div>
+              )}
               {k === "bid_bond_required" && on && cfg.showBidBond && (
                 <div className="mx-5 mb-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <div className="grid grid-cols-3 gap-3">
@@ -668,6 +680,19 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   return (
     <div>
       <StepHeader title={cfg.itemsLabel ?? "Line items"} sub={cfg.itemsNote ?? ""} />
+      {cfg.showPricing && (
+        <div className="mb-4 flex items-center justify-end">
+          <label className="text-[12px] text-slate-600 mr-2 font-medium">Pricing is:</label>
+          <select 
+            value={wiz.taxInclusive ? "inclusive" : "exclusive"}
+            onChange={e => setWiz(w => ({ ...w, taxInclusive: e.target.value === "inclusive" }))}
+            className="px-3 py-1.5 border border-slate-200 rounded-lg text-[12px] bg-white text-slate-700 focus:outline-none focus:border-slate-400"
+          >
+            <option value="exclusive">Exclusive of Taxes</option>
+            <option value="inclusive">Inclusive of Taxes</option>
+          </select>
+        </div>
+      )}
       {wiz.type === "RFQ" && wiz.items.length === 0 && (
         <div className="mb-4">
           <InfoBox variant="amber">

@@ -174,6 +174,11 @@ export interface WizState {
   _inviteSearch?: string;
   _inviteSelected?: string[];
   _templateName?: string;
+  siteVisitDate?: string;
+  siteVisitLocation?: string;
+  techWeight?: number;
+  commercialWeight?: number;
+  taxInclusive?: boolean;
 }
 
 export interface ScoreEntry {
