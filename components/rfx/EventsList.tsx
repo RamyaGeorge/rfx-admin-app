@@ -79,9 +79,13 @@ export function EventsList({ events, onCreateEvent, onViewEvent, onEvaluateEvent
                 key={ev.id}
                 onClick={() => isDraft ? onEditDraft(ev.id) : ev.status === "UNDER_EVALUATION" ? onEvaluateEvent(ev.id) : onViewEvent(ev.id)}
                 className={cn(
-                  "bg-white border border-slate-200 rounded-xl px-5 py-4 flex items-center gap-3.5 cursor-pointer transition-all hover:border-slate-300 hover:shadow-md",
-                  isDraft && "border-l-4 border-l-slate-300 opacity-85",
-                  isCancelled && "opacity-55"
+                  "bg-white border border-slate-200 border-l-[4px] rounded-xl px-5 py-4 flex items-center gap-3.5 cursor-pointer transition-all hover:border-slate-300 hover:shadow-md",
+                  ev.status === "DRAFT" ? "border-l-slate-300 opacity-85" :
+                  ev.status === "PUBLISHED" ? "border-l-sky-400" :
+                  ev.status === "OPEN" ? "border-l-emerald-400" :
+                  ev.status === "UNDER_EVALUATION" ? "border-l-amber-400" :
+                  ev.status === "AWARDED" ? "border-l-indigo-400" :
+                  ev.status === "CANCELLED" ? "border-l-red-300 opacity-55" : "border-l-slate-200"
                 )}
               >
                 {/* Type badge */}

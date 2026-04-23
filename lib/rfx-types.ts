@@ -141,6 +141,16 @@ export interface WizParticipant {
   status: ParticipantStatus;
 }
 
+export interface WizEvaluator {
+  id: number;
+  name: string;
+  email: string;
+  canView: boolean;
+  canEdit: boolean;
+  canEvaluate: boolean;
+  sections: number[];
+}
+
 export interface WizReminder {
   id: number;
   headline: string;
@@ -168,6 +178,7 @@ export interface WizState {
   toggles: WizToggles;
   items: WizItem[];
   sections: WizSection[];
+  evaluators: WizEvaluator[];
   participants: WizParticipant[];
   reminders: WizReminder[];
   _inviteOpen?: boolean;

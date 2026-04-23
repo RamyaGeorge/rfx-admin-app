@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { InfoBox, ToggleRow, NotApplicable } from "./shared";
 import { SUPPLIER_CATALOGUE, TYPE_CONFIG, DEFAULT_WIZ_STATE } from "@/lib/rfx-data";
 import type { TemplateWizData } from "@/lib/rfx-data";
-import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView } from "@/lib/rfx-types";
+import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView, WizEvaluator } from "@/lib/rfx-types";
 import {
   Check, ChevronLeft, ChevronRight, Plus, Search,
   GripVertical, X, CheckCircle2, FileSearch, LayoutList,
@@ -288,6 +288,7 @@ export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
     "Line items (BOQ)": () => <Step2 wiz={wiz} setWiz={setWiz} />,
     "Documents":        () => <Step3 wiz={wiz} />,
     "Questionnaire":    () => <Step4 wiz={wiz} setWiz={setWiz} />,
+    "Evaluators":       () => <StepEvaluators wiz={wiz} setWiz={setWiz} />,
     "Participants":     () => <Step5 wiz={wiz} setWiz={setWiz} />,
     "Reminders":        () => <Step6 wiz={wiz} setWiz={setWiz} />,
     "Review":           () => <Step7 wiz={wiz} />,
@@ -1103,6 +1104,131 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   Step Evaluators (RFP specific)
+════════════════════════════════════════════════════════════════════ */
+function StepEvaluators({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
+  function addEvaluator() {
+    setWiz(w => ({
+      ...w,
+      evaluators: [...w.evaluators, { id: Date.now(), name: "", email: "", canView: true, canEdit: false, canEvaluate: false, sections: [] }]
+    }));
+  }
+  function removeEvaluator(idx: number) {
+    setWiz(w => ({ ...w, evaluators: w.evaluators.filter((_, i) => i !== idx) }));
+  }
+  function updateEvaluator(idx: number, field: keyof WizEvaluator, val: unknown) {
+    setWiz(w => ({
+      ...w,
+      evaluators: w.evaluators.map((ev, i) => i === idx ? { ...ev, [field]: val } : ev)
+    }));
+  }
+  function toggleSection(idx: number, secId: number) {
+    setWiz(w => ({
+      ...w,
+      evaluators: w.evaluators.map((ev, i) => {
+        if (i !== idx) return ev;
+        const newSecs = ev.sections.includes(secId) ? ev.sections.filter(id => id !== secId) : [...ev.sections, secId];
+        return { ...ev, sections: newSecs };
+      })
+    }));
+  }
+
+  return (
+    <div>
+      <div className="flex items-start justify-between mb-4">
+        <StepHeader title="Evaluation team" sub="Assign internal stakeholders and specify their access permissions." inline />
+      </div>
+      
+      <div className="space-y-4 mb-4">
+        {wiz.evaluators.length === 0 && (
+          <Card><NotApplicable>No evaluators added yet.</NotApplicable></Card>
+        )}
+        {wiz.evaluators.map((ev, i) => (
+          <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-5 relative shadow-sm">
+            <button onClick={() => removeEvaluator(i)} className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all">
+              <Trash2 size={14} />
+            </button>
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Name</label>
+                <Input placeholder="Enter name" value={ev.name} onChange={e => updateEvaluator(i, "name", e.target.value)} className="h-9 text-[13px]" />
+              </div>
+              <div className="pr-10">
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Email</label>
+                <Input placeholder="Enter email" value={ev.email} onChange={e => updateEvaluator(i, "email", e.target.value)} className="h-9 text-[13px]" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="mt-1 flex-shrink-0 relative flex items-center justify-center w-4 h-4 rounded-full border border-slate-300 bg-white group-hover:border-primary transition-colors">
+                  {!ev.canEdit && !ev.canEvaluate && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
+                {/* We use an invisible native radio just for accessibility/semantics, but custom visual above */}
+                <input type="radio" checked={!ev.canEdit && !ev.canEvaluate} onChange={() => { updateEvaluator(i, "canEdit", false); updateEvaluator(i, "canEvaluate", false); }} className="sr-only" />
+                <div>
+                  <div className="text-[13px] font-medium text-slate-800">Can view</div>
+                  <div className="text-[12px] text-slate-500">Users can view the whole event.</div>
+                </div>
+              </label>
+              
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="mt-1 flex-shrink-0 relative flex items-center justify-center w-4 h-4 rounded-full border border-slate-300 bg-white group-hover:border-primary transition-colors">
+                  {ev.canEdit && !ev.canEvaluate && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
+                <input type="radio" checked={ev.canEdit && !ev.canEvaluate} onChange={() => { updateEvaluator(i, "canEdit", true); updateEvaluator(i, "canEvaluate", false); }} className="sr-only" />
+                <div>
+                  <div className="text-[13px] font-medium text-slate-800">Can edit</div>
+                  <div className="text-[12px] text-slate-500">Users can edit the event and view only: Header, Appendix documents, and the Supplier list.</div>
+                </div>
+              </label>
+
+              <div>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <div className="mt-0.5"><Checkbox checked={ev.canEvaluate} onCheckedChange={v => updateEvaluator(i, "canEvaluate", !!v)} /></div>
+                  <div>
+                    <div className="text-[13px] font-medium text-slate-800">Can evaluate</div>
+                    <div className="text-[12px] text-slate-500">Users can view and evaluate the assigned sections. Unless given additional permissions above.</div>
+                  </div>
+                </label>
+                
+                {ev.canEvaluate && (
+                  <div className="mt-3 ml-7 p-3.5 border border-slate-200 rounded-xl bg-slate-50/50">
+                    <div className="text-[11px] font-semibold text-slate-500 mb-2.5 uppercase tracking-wide">Assign sections</div>
+                    {wiz.sections.length === 0 ? (
+                      <div className="text-[12px] text-slate-400">No sections defined yet. Go to Step 4 to build your questionnaire.</div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {wiz.sections.map(sec => (
+                          <label key={sec.id} className="flex items-center gap-2.5 text-[13px] text-slate-700 cursor-pointer hover:text-slate-900 transition-colors">
+                            <Checkbox checked={ev.sections.includes(sec.id)} onCheckedChange={() => toggleSection(i, sec.id)} />
+                            <span className="font-medium">{sec.title || "Untitled section"}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mb-4">
+        <button onClick={addEvaluator} className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-700 hover:text-slate-900 transition-colors px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+          <Plus size={14} /> Add evaluator
+        </button>
+      </div>
+
+      <InfoBox variant="blue">
+        Evaluators will receive an email invitation to access the scoring panel once the event moves to the "Under Evaluation" stage.
+      </InfoBox>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════
    Step 5 — Participants
 ════════════════════════════════════════════════════════════════════ */
 function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
@@ -1306,6 +1432,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     },
     { ok: wiz.participants.length > 0,  label: wiz.participants.length > 0 ? `${wiz.participants.length} suppliers invited` : "No suppliers invited yet" },
     { ok: totalQ > 0,                   label: totalQ > 0 ? `${totalQ} total questions` : "No questionnaire sections added" },
+    ...(wiz.type === "RFP" ? [{ ok: wiz.evaluators.length > 0, label: wiz.evaluators.length > 0 ? `${wiz.evaluators.length} evaluator(s) assigned` : "No evaluators assigned yet" }] : []),
     { ok: wiz.reminders.length > 0,     label: `${wiz.reminders.length} reminder(s) scheduled` },
   ];
   const allOk = checks.every(c => c.ok);
@@ -1323,6 +1450,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     { label: "Suppliers",     value: `${wiz.participants.length} invited` },
     { label: "Questionnaire", value: `${totalQ} questions, ${wiz.sections.length} sections` },
     ...(wiz.type === "RFP" ? [{ label: "Scored questions", value: `${scoredQ} (${totalWeight}% total weight)` }] : []),
+    ...(wiz.type === "RFP" ? [{ label: "Evaluators", value: `${wiz.evaluators.length} assigned` }] : []),
     { label: "Two-envelope",  value: wiz.toggles.two_envelope_system ? "Yes" : "No" },
     { label: "Reminders",     value: `${wiz.reminders.length} scheduled` },
   ];

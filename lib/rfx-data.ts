@@ -508,6 +508,10 @@ export const DEFAULT_WIZ_STATE: WizState = {
       ],
     },
   ],
+  evaluators: [
+    { id: 1, name: "Priya Sharma", email: "priya.s@example.com", canView: true, canEdit: true, canEvaluate: true, sections: [1, 2] },
+    { id: 2, name: "Rahul Verma", email: "rahul.v@example.com", canView: true, canEdit: false, canEvaluate: true, sections: [1] },
+  ],
   participants: [
     { id: 1, name: "ABC Lighting Co.", country: "IN", status: "INVITED" },
     { id: 2, name: "GlobeLux Industries", country: "DE", status: "INVITED" },
@@ -694,8 +698,8 @@ export const TYPE_CONFIG: Record<string, {
   },
   RFP: {
     color: "#0ea5e9", bg: "#e0f2fe", name: "Request for Proposal", tagline: "Proposals with pricing & methodology – weighted evaluation",
-    steps: ["Event type", "Basic details", "Deliverables", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Optional deliverables & pricing", "Specs & T&Cs", "Evaluation criteria & questions", "Invite suppliers", "Schedule reminders", "Final check"],
+    steps: ["Event type", "Basic details", "Deliverables", "Documents", "Questionnaire", "Evaluators", "Participants", "Reminders", "Review"],
+    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Optional deliverables & pricing", "Specs & T&Cs", "Evaluation criteria & questions", "Assign scoring team", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: true, showPricing: true, showBidBond: false, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: true,
     itemsLabel: "Deliverables / scope items",
     itemsNote: "Deliverables are optional for RFP. Add items to request line-level pricing from suppliers.",
