@@ -684,7 +684,7 @@ export const TYPE_CONFIG: Record<string, {
     steps: ["Event type", "Basic details", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
     stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Specs & NDA", "Qualification questions", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: false, showPricing: false, showBidBond: false, showTwoEnvelope: false, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
-    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "price_negotiation_enabled"],
+    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments"],
     infoBox: "RFI collects qualitative information only. No BOQ, no pricing, no bid bond. Questionnaire is the primary response mechanism.",
   },
   RFP: {
