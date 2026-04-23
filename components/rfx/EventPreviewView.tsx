@@ -7,12 +7,14 @@ import {
   ChevronLeft, FileText, List, Users, HelpCircle, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ActiveEvent, SupplierResponse } from "@/lib/rfx-types";
-import { DEFAULT_WIZ_STATE } from "@/lib/rfx-data";
+import type { ActiveEvent, SupplierResponse, WizSection, WizItem, WizParticipant } from "@/lib/rfx-types";
 
 interface EventPreviewViewProps {
   event: ActiveEvent;
   responses: SupplierResponse[];
+  sections: WizSection[];
+  items: WizItem[];
+  participants: WizParticipant[];
   onBack: () => void;
   onViewResponses: () => void;
 }
@@ -49,12 +51,8 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function EventPreviewView({ event, responses, onBack, onViewResponses }: EventPreviewViewProps) {
+export function EventPreviewView({ event, responses, sections, items, participants, onBack, onViewResponses }: EventPreviewViewProps) {
   const [tab, setTab] = useState<Tab>("overview");
-
-  const sections    = DEFAULT_WIZ_STATE.sections;
-  const items       = DEFAULT_WIZ_STATE.items;
-  const participants = DEFAULT_WIZ_STATE.participants;
 
   const totalQ = sections.reduce((n, s) => n + s.questions.length, 0);
 

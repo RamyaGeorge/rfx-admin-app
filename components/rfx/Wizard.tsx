@@ -35,6 +35,7 @@ const TOGGLE_DEFS: Record<string, { label: string; sub: string }> = {
   nda_required:               { label: "NDA required",              sub: "Suppliers must sign NDA before accessing event documents." },
   intent_to_participate_req:  { label: "Intent to participate",     sub: "Suppliers must confirm participation before they can submit." },
   allow_supplier_attachments: { label: "Allow supplier attachments",sub: "Suppliers can upload supporting documents with their response." },
+  two_envelope_system:        { label: "Two-envelope system",       sub: "Technical and financial bids are sealed separately and opened in sequence." },
   bid_bond_required:          { label: "Bid bond required",         sub: "Suppliers must submit a bid security / earnest money deposit." },
   price_negotiation_enabled:  { label: "Enable price negotiation",  sub: "Buyers can negotiate pricing post-evaluation." },
 };
@@ -415,18 +416,14 @@ export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
    Step 0 — Event type + format
 ════════════════════════════════════════════════════════════════════ */
 function Step0({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
-  const selMeta = TYPE_META.find(m => m.t === wiz.type)!;
-  const formats = FORMAT_OPTIONS[wiz.type];
-
   return (
     <div>
       <StepHeader
         title="Select event type"
-        sub="Choose the type of sourcing event, then select a bidding format."
+        sub="Choose the type of sourcing event that matches your procurement need."
       />
 
-      {/* Type cards — 3 columns */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-3">
         {TYPE_META.map(({ t, icon, name, short, tag, desc, features, accent }) => {
           const sel = wiz.type === t;
           return (
@@ -438,27 +435,20 @@ function Step0({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                 sel ? accent.card : "border-slate-100 hover:border-slate-200 hover:shadow-sm"
               )}
             >
-              {/* check */}
               <div className={cn(
                 "absolute top-3.5 right-3.5 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
                 sel ? "bg-primary border-primary" : "border-slate-200 bg-white"
               )}>
                 {sel && <Check size={9} className="text-white" strokeWidth={3} />}
               </div>
-
-              {/* icon */}
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", accent.icon)}>
                 {icon}
               </div>
-
-              {/* tag pill */}
               <div className={cn("text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md inline-block mb-2", accent.pill)}>
                 {tag}
               </div>
-
               <div className="text-[13px] font-bold text-slate-900 mb-1">{short} — {name}</div>
               <div className="text-[11px] text-slate-500 leading-relaxed mb-3">{desc}</div>
-
               <div className="space-y-1">
                 {features.map(f => (
                   <div key={f} className="flex items-center gap-1.5 text-[11px] text-slate-400">
@@ -471,7 +461,6 @@ function Step0({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           );
         })}
       </div>
-
     </div>
   );
 }
@@ -557,6 +546,54 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         </>
       )}
 
+      {/* RFP-specific: Evaluation methodology */}
+      {wiz.type === "RFP" && (
+        <>
+          <SectionDivider>Evaluation methodology</SectionDivider>
+          <Card>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Technical weight (%)">
+                <Input type="number" defaultValue="70" min={0} max={100} />
+                <p className="text-[11px] text-slate-400 mt-1">Remaining 30% is commercial weight.</p>
+              </Field>
+              <Field label="Min. qualification score (%)">
+                <Input type="number" defaultValue="70" min={0} max={100} />
+                <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from commercial evaluation.</p>
+              </Field>
+              <Field label="Award basis">
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400">
+                  <option>Weighted score (technical + commercial)</option>
+                  <option>Lowest evaluated cost</option>
+                  <option>Best value for money</option>
+                </select>
+              </Field>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {/* RFQ-specific: Award basis */}
+      {wiz.type === "RFQ" && (
+        <>
+          <SectionDivider>Award basis</SectionDivider>
+          <Card>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Award method">
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400">
+                  <option>L1 — Lowest qualified bid</option>
+                  <option>L1 per lot</option>
+                  <option>L1 per line item (cherry pick)</option>
+                </select>
+              </Field>
+              <Field label="Min. qualification score (%)">
+                <Input type="number" defaultValue="70" min={0} max={100} />
+                <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from price comparison.</p>
+              </Field>
+            </div>
+          </Card>
+        </>
+      )}
+
       <SectionDivider>Event settings</SectionDivider>
       <Card padding={false}>
         {cfg.togglesToShow.map(k => {
@@ -569,6 +606,18 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                 <ToggleRow label={def.label} sub={def.sub} checked={on}
                   onChange={v => setWiz(w => ({ ...w, toggles: { ...w.toggles, [k]: v } }))} />
               </div>
+              {k === "two_envelope_system" && on && (
+                <div className="mx-5 mb-3 p-4 bg-sky-50 border border-sky-200 rounded-xl">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Technical envelope opening date">
+                      <DateTimePicker defaultValue="2026-10-05T10:00" />
+                    </Field>
+                    <Field label="Financial envelope opening date">
+                      <DateTimePicker defaultValue="2026-10-15T10:00" />
+                    </Field>
+                  </div>
+                </div>
+              )}
               {k === "bid_bond_required" && on && cfg.showBidBond && (
                 <div className="mx-5 mb-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <div className="grid grid-cols-3 gap-3">
@@ -586,7 +635,7 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           );
         })}
       </Card>
-      {cfg.infoBox && <div className="mt-4"><InfoBox variant="blue">{cfg.infoBox}</InfoBox></div>}
+      {cfg.infoBox && <div className="mt-4"><InfoBox variant={wiz.type === "RFQ" ? "amber" : "blue"}>{cfg.infoBox}</InfoBox></div>}
     </div>
   );
 }
@@ -619,7 +668,20 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   return (
     <div>
       <StepHeader title={cfg.itemsLabel ?? "Line items"} sub={cfg.itemsNote ?? ""} />
-      {cfg.infoBox && <div className="mb-4"><InfoBox variant="amber">{cfg.infoBox}</InfoBox></div>}
+      {wiz.type === "RFQ" && wiz.items.length === 0 && (
+        <div className="mb-4">
+          <InfoBox variant="amber">
+            <strong>BOQ is mandatory for RFQ.</strong> Suppliers cannot submit without a Bill of Quantities to price. Add at least one line item below.
+          </InfoBox>
+        </div>
+      )}
+      {wiz.type === "RFP" && (
+        <div className="mb-4">
+          <InfoBox variant="blue">
+            Deliverables are <strong>optional</strong> for RFP. Add items if you want line-level pricing from suppliers, or skip this step to collect open-form proposals only.
+          </InfoBox>
+        </div>
+      )}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
@@ -883,8 +945,34 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 
   return (
     <div>
+      {/* RFP vs RFQ questionnaire purpose banner */}
+      {wiz.type === "RFP" && (
+        <div className="flex items-start gap-2 mb-4 p-3.5 bg-sky-50 border border-sky-200 rounded-xl">
+          <div className="w-4 h-4 rounded-full bg-sky-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-[9px] font-bold text-sky-700">i</span>
+          </div>
+          <p className="text-[12px] text-sky-800">
+            <strong>RFP:</strong> Questions are <strong>scored</strong> and contribute to the weighted technical evaluation. Mark questions as "Scored" and assign weights. The combined tech + commercial score determines the award.
+          </p>
+        </div>
+      )}
+      {wiz.type === "RFQ" && (
+        <div className="flex items-start gap-2 mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="w-4 h-4 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-[9px] font-bold text-amber-700">i</span>
+          </div>
+          <p className="text-[12px] text-amber-800">
+            <strong>RFQ:</strong> Questions are for <strong>qualification only</strong> — suppliers must pass before their price is considered. Award goes to the L1 (lowest price) among qualified suppliers. Scoring weights are not used.
+          </p>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-4">
-        <StepHeader title="Questionnaire" sub="Scored questions contribute to the technical evaluation score." inline />
+        <StepHeader
+          title="Questionnaire"
+          sub={wiz.type === "RFP" ? "Scored questions determine technical evaluation weight." : wiz.type === "RFQ" ? "Qualification questions — pass/fail gates before price comparison." : "Questions sent to all invited suppliers."}
+          inline
+        />
         <div className="flex items-center gap-2 flex-shrink-0">
           {canAISuggest && (
             <button
@@ -1173,26 +1261,45 @@ function Step7({ wiz }: { wiz: WizState }) {
   const total = wiz.items.reduce((s, it) => s + parseFloat(it.target_price || "0") * parseFloat(it.quantity || "0"), 0);
   const fmtLabel = FORMAT_OPTIONS[wiz.type].find(f => f.value === wiz.format)?.label ?? "—";
 
+  const scoredQ = wiz.sections.reduce((n, s) => n + s.questions.filter(q => q.scored).length, 0);
+  const totalWeight = wiz.sections.reduce((n, s) => n + s.questions.filter(q => q.scored).reduce((w, q) => w + (q.weight ?? 0), 0), 0);
+
   const checks = [
-    { ok: true,                        label: "Event title provided" },
-    { ok: true,                        label: "Submission deadline set" },
-    { ok: wiz.type === "RFI" || wiz.items.length > 0, label: wiz.type === "RFI" ? "Line items not required for RFI" : wiz.items.length > 0 ? `${wiz.items.length} line items added` : "No line items — required" },
-    { ok: wiz.participants.length > 0, label: wiz.participants.length > 0 ? `${wiz.participants.length} suppliers invited` : "No suppliers invited yet" },
-    { ok: totalQ > 0,                  label: totalQ > 0 ? `${totalQ} questions in ${wiz.sections.length} sections` : "No questionnaire sections" },
-    { ok: wiz.reminders.length > 0,    label: `${wiz.reminders.length} reminder(s) scheduled` },
+    { ok: true,                         label: "Event title provided" },
+    { ok: true,                         label: "Submission deadline set" },
+    {
+      ok: wiz.type === "RFI" || wiz.type === "RFP" || wiz.items.length > 0,
+      label: wiz.type === "RFI" ? "Line items not required for RFI"
+           : wiz.type === "RFP" ? wiz.items.length > 0 ? `${wiz.items.length} deliverables added` : "Deliverables optional for RFP — none added"
+           : wiz.items.length > 0 ? `${wiz.items.length} BOQ line items added` : "BOQ is mandatory for RFQ — no items added",
+    },
+    {
+      ok: wiz.type !== "RFP" || scoredQ > 0,
+      label: wiz.type === "RFP"
+        ? scoredQ > 0 ? `${scoredQ} scored questions (total weight: ${totalWeight}%)` : "RFP requires at least one scored evaluation question"
+        : `${totalQ} qualification questions in ${wiz.sections.length} sections`,
+    },
+    { ok: wiz.participants.length > 0,  label: wiz.participants.length > 0 ? `${wiz.participants.length} suppliers invited` : "No suppliers invited yet" },
+    { ok: totalQ > 0,                   label: totalQ > 0 ? `${totalQ} total questions` : "No questionnaire sections added" },
+    { ok: wiz.reminders.length > 0,     label: `${wiz.reminders.length} reminder(s) scheduled` },
   ];
   const allOk = checks.every(c => c.ok);
 
   const rows = [
-    { label: "Type",         value: <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-lg", meta.accent.pill)}>{meta.short}</span> },
-    { label: "Format",       value: fmtLabel },
-    { label: "Event name",   value: "Annual Decorative Lighting Contract" },
-    { label: "Deadline",     value: "30 Sep 2026" },
+    { label: "Type",          value: <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-lg", meta.accent.pill)}>{meta.short}</span> },
+    { label: "Format",        value: fmtLabel },
+    { label: "Event name",    value: "Annual Decorative Lighting Contract" },
+    { label: "Deadline",      value: "30 Sep 2026" },
     ...(cfg.showPricing ? [{ label: "Est. value", value: "₹50,00,000" }] : []),
-    { label: "Line items",   value: cfg.showItems ? `${wiz.items.length} items / ₹${total.toLocaleString("en-IN")}` : "N/A" },
-    { label: "Suppliers",    value: `${wiz.participants.length} invited` },
-    { label: "Questionnaire",value: `${totalQ} questions, ${wiz.sections.length} sections` },
-    { label: "Reminders",    value: `${wiz.reminders.length} scheduled` },
+    { label: wiz.type === "RFQ" ? "BOQ items" : "Line items",
+      value: cfg.showItems ? `${wiz.items.length} items${total > 0 ? ` / ₹${total.toLocaleString("en-IN")}` : ""}` : "N/A" },
+    ...(wiz.type === "RFP" ? [{ label: "Award basis", value: "Weighted technical + commercial score" }] : []),
+    ...(wiz.type === "RFQ" ? [{ label: "Award basis", value: "L1 — lowest qualified bid" }] : []),
+    { label: "Suppliers",     value: `${wiz.participants.length} invited` },
+    { label: "Questionnaire", value: `${totalQ} questions, ${wiz.sections.length} sections` },
+    ...(wiz.type === "RFP" ? [{ label: "Scored questions", value: `${scoredQ} (${totalWeight}% total weight)` }] : []),
+    { label: "Two-envelope",  value: wiz.toggles.two_envelope_system ? "Yes" : "No" },
+    { label: "Reminders",     value: `${wiz.reminders.length} scheduled` },
   ];
 
   return (

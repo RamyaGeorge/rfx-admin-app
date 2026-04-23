@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { TEMPLATE_WIZ_DATA, type TemplateWizData } from "@/lib/rfx-data";
 import type { EventType } from "@/lib/rfx-types";
 
-export type CreateMode = "template" | "blank";
+type CreateMode = "template" | "blank";
 
 interface Props {
   open: boolean;

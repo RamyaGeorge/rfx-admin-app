@@ -20,6 +20,7 @@ import {
   RESPONSES_BY_EVENT,
   CLARIFICATIONS_BY_EVENT,
   CRITERIA,
+  DEFAULT_WIZ_STATE,
 } from "@/lib/rfx-data";
 import type {
   AppView, RFXEvent, ActiveEvent, SupplierResponse, Clarification, WizState,
@@ -169,7 +170,7 @@ export default function Home() {
                 if (ev) switchEvent(ev);
                 navigate("responses");
               }}
-              onEditDraft={() => navigate("wizard")}
+              onEditDraft={(id) => { const ev = events.find(e => e.id === id); if (ev) switchEvent(ev); navigate("wizard"); }}
             />
           )}
 
@@ -190,6 +191,9 @@ export default function Home() {
               <EventPreviewView
                 event={activeEvent}
                 responses={responses}
+                sections={DEFAULT_WIZ_STATE.sections}
+                items={DEFAULT_WIZ_STATE.items}
+                participants={DEFAULT_WIZ_STATE.participants}
                 onBack={() => navigate("events")}
                 onViewResponses={() => navigate("responses")}
               />
