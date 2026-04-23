@@ -1148,15 +1148,20 @@ function StepEvaluators({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch
             <button onClick={() => removeEvaluator(i)} className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all">
               <Trash2 size={14} />
             </button>
-            <div className="grid grid-cols-2 gap-4 mb-5">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Name</label>
-                <Input placeholder="Enter name" value={ev.name} onChange={e => updateEvaluator(i, "name", e.target.value)} className="h-9 text-[13px]" />
-              </div>
-              <div className="pr-10">
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Email</label>
-                <Input placeholder="Enter email" value={ev.email} onChange={e => updateEvaluator(i, "email", e.target.value)} className="h-9 text-[13px]" />
-              </div>
+            <div className="mb-5 pr-10">
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Name</label>
+              <select
+                value={ev.name}
+                onChange={e => updateEvaluator(i, "name", e.target.value)}
+                className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[13px] bg-white text-slate-700 focus:outline-none focus:border-slate-400"
+              >
+                <option value="">Select team member…</option>
+                <option value="Priya Sharma">Priya Sharma</option>
+                <option value="Rahul Verma">Rahul Verma</option>
+                <option value="Sam Rayburn">Sam Rayburn</option>
+                <option value="Amit Patel">Amit Patel</option>
+                <option value="Neha Gupta">Neha Gupta</option>
+              </select>
             </div>
 
             <div className="space-y-4">
