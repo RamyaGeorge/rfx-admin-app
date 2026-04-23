@@ -164,6 +164,7 @@ export interface WizState {
   step: number;
   type: EventType;
   format: EventFormat;
+  category: string;
   toggles: WizToggles;
   items: WizItem[];
   sections: WizSection[];

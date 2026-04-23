@@ -1,20 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { InfoBox, SectionLabel, ToggleRow, NotApplicable } from "./shared";
+import { InfoBox, ToggleRow, NotApplicable } from "./shared";
 import { SUPPLIER_CATALOGUE, TYPE_CONFIG, DEFAULT_WIZ_STATE } from "@/lib/rfx-data";
 import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView } from "@/lib/rfx-types";
 import {
   Check, ChevronLeft, ChevronRight, Plus, Search,
   GripVertical, X, CheckCircle2, FileSearch, LayoutList,
-  ShoppingCart, ArrowLeft,
+  ShoppingCart, ArrowLeft, Sparkles, Loader2, Pencil, Trash2,
 } from "lucide-react";
 
 interface WizardProps {
@@ -88,6 +87,170 @@ const TYPE_META = [
     accent: { card: "border-amber-300 bg-amber-50/60", icon: "bg-amber-100 text-amber-600", pill: "bg-amber-100 text-amber-700", bar: "bg-amber-400", ring: "ring-amber-300", text: "text-amber-600" },
   },
 ] as const;
+
+/* ════════════════════════════════════════════════════════════════════
+   Category list (used in Step 1 and Step 4 AI suggest)
+════════════════════════════════════════════════════════════════════ */
+const PROCUREMENT_CATEGORIES = [
+  "IT & Software", "Construction & Civil", "Electrical & Instrumentation",
+  "Facility Management", "Logistics & Transport", "Medical & Healthcare",
+  "Marketing & Communications", "HR & Staffing", "Legal & Compliance",
+  "Finance & Accounting",
+];
+
+/* AI-suggested section+question templates per category */
+type AISuggestedSection = { title: string; type: string; questions: { text: string; qtype: string; mandatory: boolean; scored: boolean; weight?: number }[] };
+
+const AI_SUGGESTED_SECTIONS: Record<string, AISuggestedSection[]> = {
+  "IT & Software": [
+    { title: "Technical Compliance", type: "TECHNICAL", questions: [
+      { text: "List the software modules / components being offered", qtype: "TEXT", mandatory: true, scored: false },
+      { text: "Is the solution cloud-hosted (SaaS) or on-premise?", qtype: "SINGLE_CHOICE", mandatory: true, scored: true, weight: 15 },
+      { text: "Upload system architecture diagram", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Describe data encryption at rest and in transit", qtype: "TEXT", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Years of experience delivering similar IT solutions", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Upload ISO 27001 or equivalent security certification", qtype: "FILE_UPLOAD", mandatory: false, scored: true, weight: 10 },
+      { text: "Provide a list of at least 3 reference clients with contact details", qtype: "TEXT", mandatory: true, scored: false },
+    ]},
+    { title: "Financial", type: "FINANCIAL", questions: [
+      { text: "Provide annual license cost breakdown per user tier", qtype: "NUMERIC", mandatory: true, scored: false },
+      { text: "State implementation and professional services cost", qtype: "NUMERIC", mandatory: true, scored: false },
+      { text: "Annual Maintenance & Support cost as % of license fee", qtype: "NUMERIC", mandatory: true, scored: false },
+    ]},
+  ],
+  "Construction & Civil": [
+    { title: "Technical Compliance", type: "TECHNICAL", questions: [
+      { text: "Describe the construction methodology proposed", qtype: "TEXT", mandatory: true, scored: true, weight: 20 },
+      { text: "Upload structural drawings or shop drawings", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Specify materials to be used with grade/standard", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      { text: "Proposed project duration (weeks)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "HSE & Compliance", type: "HSE", questions: [
+      { text: "Upload valid HSE plan for the project", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Describe your LTIFR (Lost Time Injury Frequency Rate) for the last 3 years", qtype: "TEXT", mandatory: true, scored: true, weight: 10 },
+      { text: "Is your firm registered with CPWD / state PWD?", qtype: "BOOLEAN", mandatory: true, scored: false },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Years of experience in civil construction", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Largest project value completed (₹ Cr)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Upload list of projects completed in last 5 years", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+    ]},
+  ],
+  "Electrical & Instrumentation": [
+    { title: "Technical Compliance", type: "TECHNICAL", questions: [
+      { text: "Describe the scope of electrical/instrumentation work", qtype: "TEXT", mandatory: true, scored: true, weight: 20 },
+      { text: "Upload single-line diagram (SLD) or P&ID", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Specify equipment make and model for major items", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      { text: "Confirm compliance with IS/IEC standards applicable", qtype: "BOOLEAN", mandatory: true, scored: false },
+    ]},
+    { title: "HSE & Compliance", type: "HSE", questions: [
+      { text: "Upload valid electrical license (Class A contractor)", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Describe safe work method statement for live panel work", qtype: "TEXT", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Years in electrical contracting", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Number of licensed electricians on roll", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+    ]},
+  ],
+  "Facility Management": [
+    { title: "Service Scope", type: "TECHNICAL", questions: [
+      { text: "List all facility services to be provided", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      { text: "Proposed staffing plan for the facility", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      { text: "Describe quality management / SLA monitoring process", qtype: "TEXT", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Compliance", type: "COMPLIANCE", questions: [
+      { text: "Upload valid contract labour license under CLRA", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Confirm PF and ESI registration", qtype: "BOOLEAN", mandatory: true, scored: false },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Number of facilities currently managed", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Provide reference list from last 3 years", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+    ]},
+  ],
+  "Logistics & Transport": [
+    { title: "Operational Capability", type: "TECHNICAL", questions: [
+      { text: "Describe your fleet size and vehicle types available", qtype: "TEXT", mandatory: true, scored: true, weight: 20 },
+      { text: "Provide coverage map / serviceable pin codes", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Average transit time for primary lane (source to destination)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 15 },
+      { text: "Do you offer real-time GPS tracking?", qtype: "BOOLEAN", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Compliance", type: "COMPLIANCE", questions: [
+      { text: "Upload valid motor vehicle permits and fitness certificates", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Confirm GST registration", qtype: "BOOLEAN", mandatory: true, scored: false },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Years in logistics / transport business", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Peak monthly volume handled (units/shipments)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+    ]},
+  ],
+  "Medical & Healthcare": [
+    { title: "Technical Specifications", type: "TECHNICAL", questions: [
+      { text: "Provide detailed product specification sheet", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "State country of origin and manufacturer name", qtype: "TEXT", mandatory: true, scored: false },
+      { text: "Describe after-sales service and preventive maintenance offering", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      { text: "Warranty period offered (months)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Regulatory Compliance", type: "COMPLIANCE", questions: [
+      { text: "Upload CDSCO registration / import license", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Confirm CE / FDA / ISO 13485 certification", qtype: "BOOLEAN", mandatory: true, scored: true, weight: 15 },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Number of years supplying to hospitals / healthcare", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Provide list of major hospital clients", qtype: "FILE_UPLOAD", mandatory: false, scored: false },
+    ]},
+  ],
+  "Marketing & Communications": [
+    { title: "Creative & Strategy", type: "TECHNICAL", questions: [
+      { text: "Describe your proposed campaign strategy", qtype: "TEXT", mandatory: true, scored: true, weight: 25 },
+      { text: "Upload portfolio / case studies from similar campaigns", qtype: "FILE_UPLOAD", mandatory: true, scored: true, weight: 20 },
+      { text: "Proposed media plan and channel mix", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+    ]},
+    { title: "Team & Credentials", type: "GENERAL", questions: [
+      { text: "Describe the team that will handle this account", qtype: "TEXT", mandatory: true, scored: true, weight: 10 },
+      { text: "Agency awards or recognitions in last 3 years", qtype: "TEXT", mandatory: false, scored: false },
+    ]},
+  ],
+  "HR & Staffing": [
+    { title: "Service Delivery", type: "TECHNICAL", questions: [
+      { text: "Describe your sourcing and screening methodology", qtype: "TEXT", mandatory: true, scored: true, weight: 20 },
+      { text: "Average time-to-fill for the roles required", qtype: "NUMERIC", mandatory: true, scored: true, weight: 15 },
+      { text: "Replacement guarantee period (days)", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Compliance", type: "COMPLIANCE", questions: [
+      { text: "Upload valid contract labour license", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Confirm PF / ESI / professional tax compliance", qtype: "BOOLEAN", mandatory: true, scored: false },
+    ]},
+    { title: "Company Profile", type: "GENERAL", questions: [
+      { text: "Number of contractors currently on payroll", qtype: "NUMERIC", mandatory: true, scored: true, weight: 10 },
+      { text: "Key industries served", qtype: "TEXT", mandatory: false, scored: false },
+    ]},
+  ],
+  "Legal & Compliance": [
+    { title: "Professional Capability", type: "TECHNICAL", questions: [
+      { text: "Describe relevant experience in the required practice area", qtype: "TEXT", mandatory: true, scored: true, weight: 25 },
+      { text: "Names and qualifications of lead lawyers assigned", qtype: "TEXT", mandatory: true, scored: true, weight: 20 },
+      { text: "Upload bar council registration / firm registration proof", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+    ]},
+    { title: "Conflict of Interest", type: "COMPLIANCE", questions: [
+      { text: "Confirm no conflict of interest with our organisation", qtype: "BOOLEAN", mandatory: true, scored: false },
+      { text: "List any current engagements with competitors", qtype: "TEXT", mandatory: true, scored: false },
+    ]},
+  ],
+  "Finance & Accounting": [
+    { title: "Technical Capability", type: "TECHNICAL", questions: [
+      { text: "Describe relevant engagement experience (industry & scale)", qtype: "TEXT", mandatory: true, scored: true, weight: 25 },
+      { text: "Names and designations of engagement partners", qtype: "TEXT", mandatory: true, scored: true, weight: 15 },
+      { text: "Upload firm registration certificate (ICAI / ICSI)", qtype: "FILE_UPLOAD", mandatory: true, scored: false },
+      { text: "Describe methodology and tools used", qtype: "TEXT", mandatory: true, scored: true, weight: 10 },
+    ]},
+    { title: "Independence & Compliance", type: "COMPLIANCE", questions: [
+      { text: "Confirm independence from the auditee as per applicable standards", qtype: "BOOLEAN", mandatory: true, scored: false },
+      { text: "List any regulatory actions or penalties in last 5 years", qtype: "TEXT", mandatory: true, scored: false },
+    ]},
+  ],
+};
 
 /* ════════════════════════════════════════════════════════════════════
    Wizard shell
@@ -302,7 +465,6 @@ function Step0({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 ════════════════════════════════════════════════════════════════════ */
 function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
   const cfg = TYPE_CONFIG[wiz.type];
-  const meta = TYPE_META.find(m => m.t === wiz.type)!;
 
   return (
     <div>
@@ -316,14 +478,24 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
             <Input readOnly value={`${wiz.type}-2026-0019`} className="bg-slate-50 text-slate-400" />
           </Field>
           <Field label="Category">
-            <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400">
-              <option>Electrical</option><option>Civil</option><option>IT</option><option>Facilities</option>
+            <select
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+              value={wiz.category}
+              onChange={e => setWiz(w => ({ ...w, category: e.target.value }))}
+            >
+              <option value="">Select category…</option>
+              {PROCUREMENT_CATEGORIES.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
           </Field>
         </div>
         <div className="mt-3">
           <Field label="Description / scope summary">
-            <Textarea defaultValue="Supply and installation of decorative lighting for Phase 2 of the HQ renovation project." className="min-h-[72px] resize-none" />
+            <Textarea
+              defaultValue="Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."
+              className="min-h-[72px] resize-none"
+            />
           </Field>
         </div>
       </Card>
@@ -506,7 +678,132 @@ function Step3({ wiz }: { wiz: WizState }) {
 /* ════════════════════════════════════════════════════════════════════
    Step 4 — Questionnaire
 ════════════════════════════════════════════════════════════════════ */
+function QuestionRow({
+  q, si, qi, onUpdate, onDelete,
+}: {
+  q: WizQuestion;
+  si: number;
+  qi: number;
+  onUpdate: (si: number, qi: number, field: keyof WizQuestion, val: unknown) => void;
+  onDelete: (si: number, qi: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ text: q.text, qtype: q.qtype, mandatory: q.mandatory, scored: q.scored, weight: q.weight ?? 0 });
+
+  function commitEdit() {
+    onUpdate(si, qi, "text", draft.text);
+    onUpdate(si, qi, "qtype", draft.qtype);
+    onUpdate(si, qi, "mandatory", draft.mandatory);
+    onUpdate(si, qi, "scored", draft.scored);
+    onUpdate(si, qi, "weight", draft.weight);
+    setEditing(false);
+  }
+
+  function discardEdit() {
+    setDraft({ text: q.text, qtype: q.qtype, mandatory: q.mandatory, scored: q.scored, weight: q.weight ?? 0 });
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="px-4 py-4 bg-primary/3 border-b border-slate-100">
+        <div className="grid grid-cols-1 gap-3 mb-3">
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">Question text</label>
+            <Input
+              value={draft.text}
+              onChange={e => setDraft(d => ({ ...d, text: e.target.value }))}
+              className="text-[13px]"
+              placeholder="Enter question text…"
+              autoFocus
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">Response type</label>
+              <select
+                value={draft.qtype}
+                onChange={e => setDraft(d => ({ ...d, qtype: e.target.value }))}
+                className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[13px] bg-white text-slate-700 focus:outline-none focus:border-slate-400"
+              >
+                {QTYPES.map(t => <option key={t} value={t}>{QTYPE_LABELS[t]}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-2 pt-5">
+              <label className="flex items-center gap-2 text-[12px] text-slate-600 cursor-pointer">
+                <Checkbox checked={draft.mandatory} onCheckedChange={v => setDraft(d => ({ ...d, mandatory: !!v }))} />
+                Required field
+              </label>
+              <label className="flex items-center gap-2 text-[12px] text-slate-600 cursor-pointer">
+                <Checkbox checked={draft.scored} onCheckedChange={v => setDraft(d => ({ ...d, scored: !!v }))} />
+                Include in technical score
+              </label>
+            </div>
+          </div>
+          {draft.scored && (
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">Score weight (%)</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number" min="0" max="100"
+                  value={draft.weight}
+                  onChange={e => setDraft(d => ({ ...d, weight: parseInt(e.target.value) || 0 }))}
+                  className="w-24 text-[13px]"
+                />
+                <span className="text-[12px] text-slate-400">% of section score</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <button onClick={commitEdit} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-1.5 rounded-lg hover:bg-primary/80 transition-colors">
+            <Check size={12} /> Save
+          </button>
+          <button onClick={discardEdit} className="text-[12px] text-slate-500 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50/60 transition-colors group">
+      <GripVertical size={13} className="text-slate-300 cursor-grab flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] text-slate-800 truncate">{q.text || <span className="text-slate-400 italic">No question text</span>}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{QTYPE_LABELS[q.qtype]}</span>
+          {q.mandatory && <span className="text-[10px] font-medium text-red-500 bg-red-50 px-1.5 py-0.5 rounded">Required</span>}
+          {q.scored && <span className="text-[10px] font-medium text-primary bg-primary/8 px-1.5 py-0.5 rounded">Scored · {q.weight ?? 0}%</span>}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <button
+          onClick={() => setEditing(true)}
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-all"
+          title="Edit question"
+        >
+          <Pencil size={13} />
+        </button>
+        <button
+          onClick={() => onDelete(si, qi)}
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all"
+          title="Delete question"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiDone, setAiDone] = useState(false);
+
+  const canAISuggest = !!wiz.category && !!AI_SUGGESTED_SECTIONS[wiz.category];
+
   function addSection() {
     setWiz(w => ({ ...w, sections: [...w.sections, { id: Date.now(), title: "New section", type: "GENERAL", mandatory: false, questions: [] }] }));
   }
@@ -526,17 +823,77 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     setWiz(w => ({ ...w, sections: w.sections.map((s, i) => i === si ? { ...s, questions: s.questions.map((q, j) => j === qi ? { ...q, [field]: val } : q) } : s) }));
   }
 
+  function handleAISuggest() {
+    if (!wiz.category || !AI_SUGGESTED_SECTIONS[wiz.category]) return;
+    setAiGenerating(true);
+    setTimeout(() => {
+      const suggested = AI_SUGGESTED_SECTIONS[wiz.category];
+      const newSections: WizSection[] = suggested.map((s, si) => ({
+        id: Date.now() + si,
+        title: s.title,
+        type: s.type,
+        mandatory: true,
+        questions: s.questions.map((q, qi) => ({
+          id: Date.now() + si * 100 + qi,
+          text: q.text,
+          qtype: q.qtype,
+          mandatory: q.mandatory,
+          scored: q.scored,
+          weight: q.weight ?? 0,
+        })),
+      }));
+      setWiz(w => ({ ...w, sections: newSections }));
+      setAiGenerating(false);
+      setAiDone(true);
+    }, 1400);
+  }
+
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
         <StepHeader title="Questionnaire" sub="Scored questions contribute to the technical evaluation score." inline />
-        <button onClick={addSection} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors flex-shrink-0">
-          <Plus size={13} /> Add section
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {canAISuggest && (
+            <button
+              onClick={handleAISuggest}
+              disabled={aiGenerating}
+              className="flex items-center gap-1.5 text-[12px] font-semibold border border-primary text-primary px-3.5 py-2 rounded-xl hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {aiGenerating
+                ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                : <><Sparkles size={13} /> AI suggest</>
+              }
+            </button>
+          )}
+          <button onClick={addSection} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors">
+            <Plus size={13} /> Add section
+          </button>
+        </div>
       </div>
 
+      {!canAISuggest && wiz.sections.length === 0 && (
+        <div className="flex items-start gap-2 mb-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+          <Sparkles size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-[12px] text-amber-700">
+            Select a <strong>category</strong> in Step 2 — Basic details to enable AI-suggested sections and questions.
+          </p>
+        </div>
+      )}
+
+      {aiDone && (
+        <div className="flex items-center gap-2 mb-3 p-3.5 bg-primary/5 border border-primary/20 rounded-xl">
+          <Sparkles size={14} className="text-primary flex-shrink-0" />
+          <p className="text-[12px] text-primary font-medium">
+            AI has suggested sections and questions for <strong>{wiz.category}</strong> — review and edit as needed.
+          </p>
+          <button onClick={() => setAiDone(false)} className="ml-auto text-primary/50 hover:text-primary transition-colors">
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
       {wiz.sections.length === 0 && (
-        <Card><NotApplicable>No sections yet. Click "Add section" to build the questionnaire.</NotApplicable></Card>
+        <Card><NotApplicable>No sections yet. Click "Add section" to build the questionnaire{canAISuggest ? " or use AI suggest" : ""}.</NotApplicable></Card>
       )}
 
       {wiz.sections.map((sec, si) => (
@@ -546,52 +903,44 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
             <Input
               defaultValue={sec.title}
               onBlur={e => updateSec(si, "title", e.target.value)}
-              className="h-8 text-[13px] font-semibold w-44 flex-shrink-0"
+              className="h-8 text-[13px] font-semibold w-48 flex-shrink-0"
               placeholder="Section title…"
             />
-            <select value={sec.type} onChange={e => updateSec(si, "type", e.target.value)} className="h-8 px-2 border border-slate-200 rounded-lg text-[11px] bg-white text-slate-600">
+            <select
+              value={sec.type}
+              onChange={e => updateSec(si, "type", e.target.value)}
+              className="h-8 px-2 border border-slate-200 rounded-lg text-[11px] bg-white text-slate-600 focus:outline-none focus:border-slate-400"
+            >
               {SEC_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
-            <label className="flex items-center gap-1.5 text-[11px] text-slate-500 cursor-pointer">
+            <label className="flex items-center gap-1.5 text-[11px] text-slate-500 cursor-pointer select-none">
               <Checkbox checked={sec.mandatory} onCheckedChange={v => updateSec(si, "mandatory", !!v)} /> Required
             </label>
-            <div className="ml-auto flex gap-2">
-              <button onClick={() => addQ(si)} className="flex items-center gap-1 text-[11px] font-medium text-slate-600 border border-slate-200 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-                <Plus size={11} /> Question
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-[11px] text-slate-400">{sec.questions.length} question{sec.questions.length !== 1 ? "s" : ""}</span>
+              <button
+                onClick={() => addQ(si)}
+                className="flex items-center gap-1 text-[11px] font-medium text-slate-600 border border-slate-200 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <Plus size={11} /> Add question
               </button>
-              <button onClick={() => delSection(si)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all">
-                <X size={13} />
+              <button
+                onClick={() => delSection(si)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all"
+                title="Remove section"
+              >
+                <Trash2 size={13} />
               </button>
             </div>
           </div>
 
           {/* Questions */}
-          <div className="divide-y divide-slate-50">
+          <div>
             {sec.questions.length === 0 && (
-              <p className="text-[12px] text-slate-400 px-4 py-4">No questions yet.</p>
+              <p className="text-[12px] text-slate-400 px-4 py-4">No questions yet. Click "Add question" to begin.</p>
             )}
             {sec.questions.map((q, qi) => (
-              <div key={q.id} className="flex flex-wrap items-center gap-2.5 px-4 py-3">
-                <GripVertical size={13} className="text-slate-200 cursor-grab flex-shrink-0" />
-                <Input defaultValue={q.text} onBlur={e => updateQ(si, qi, "text", e.target.value)} className="h-8 text-[12px] flex-1 min-w-36" placeholder="Question text…" />
-                <select value={q.qtype} onChange={e => updateQ(si, qi, "qtype", e.target.value)} className="h-8 px-2 border border-slate-200 rounded-lg text-[11px] bg-white text-slate-600">
-                  {QTYPES.map(t => <option key={t} value={t}>{QTYPE_LABELS[t]}</option>)}
-                </select>
-                <label className="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
-                  <Checkbox checked={q.mandatory} onCheckedChange={v => updateQ(si, qi, "mandatory", !!v)} /> Req
-                </label>
-                <label className="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
-                  <Checkbox checked={q.scored} onCheckedChange={v => updateQ(si, qi, "scored", !!v)} /> Scored
-                </label>
-                {q.scored && (
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                    <Input type="number" min="0" max="100" defaultValue={q.weight ?? 0} onBlur={e => updateQ(si, qi, "weight", parseInt(e.target.value) || 0)} className="h-7 w-12 text-[11px] text-center" />%
-                  </div>
-                )}
-                <button onClick={() => delQ(si, qi)} className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all flex-shrink-0">
-                  <X size={12} />
-                </button>
-              </div>
+              <QuestionRow key={q.id} q={q} si={si} qi={qi} onUpdate={updateQ} onDelete={delQ} />
             ))}
           </div>
         </div>

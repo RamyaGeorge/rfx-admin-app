@@ -8,6 +8,7 @@ import { Wizard } from "@/components/rfx/Wizard";
 import { ResponsesView } from "@/components/rfx/ResponsesView";
 import { SuppliersView } from "@/components/rfx/SuppliersView";
 import { TemplatesView } from "@/components/rfx/TemplatesView";
+import { CreateEventModal, type CreateMode } from "@/components/rfx/CreateEventModal";
 import {
   EVENTS_LIST as INITIAL_EVENTS,
   ACTIVE_EVENT as INITIAL_ACTIVE,
@@ -64,8 +65,16 @@ export default function Home() {
   const [clarifications, setClarifications] = useState<Clarification[]>(INITIAL_CLARIFS.map(c => ({ ...c })));
   const [publishedType,  setPublishedType]  = useState("");
   const [publishedCount, setPublishedCount] = useState(0);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   function navigate(v: AppView) { setView(v); }
+
+  function handleCreateEvent() { setCreateModalOpen(true); }
+
+  function handleCreateModalConfirm() {
+    setCreateModalOpen(false);
+    setView("wizard");
+  }
 
   function switchEvent(ev: RFXEvent) {
     setActiveEvent(toActiveEvent(ev));
@@ -106,6 +115,11 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f0f4f8]">
+      <CreateEventModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onConfirm={handleCreateModalConfirm}
+      />
       <Sidebar activeView={view} onNavigate={navigate} />
 
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -138,7 +152,7 @@ export default function Home() {
           {view === "events" && (
             <EventsList
               events={events}
-              onCreateEvent={() => navigate("wizard")}
+              onCreateEvent={handleCreateEvent}
               onOpenEvent={(id) => {
                 const ev = events.find(e => e.id === id);
                 if (ev) switchEvent(ev);

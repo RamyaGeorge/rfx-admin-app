@@ -475,6 +475,7 @@ export const DEFAULT_WIZ_STATE: WizState = {
   step: 0,
   type: "RFP",
   format: "LIST",
+  category: "",
   toggles: {
     nda_required: true,
     intent_to_participate_req: true,
