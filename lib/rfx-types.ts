@@ -186,6 +186,7 @@ export interface WizState {
   _inviteSearch?: string;
   _inviteSelected?: string[];
   _templateName?: string;
+  deadline?: string;
   siteVisitDate?: string;
   siteVisitLocation?: string;
   techWeight?: number;

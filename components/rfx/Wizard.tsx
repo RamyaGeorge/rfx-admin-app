@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Textarea } from "@/components/ui/textarea";
@@ -262,11 +262,31 @@ const AI_SUGGESTED_SECTIONS: Record<string, AISuggestedSection[]> = {
 function initFromTemplate(t: TemplateWizData): WizState {
   return {
     ...DEFAULT_WIZ_STATE,
+    step: 1,
     type: t.type,
     format: FORMAT_OPTIONS[t.type]?.[0]?.value ?? "LIST",
     category: t.category,
+    deadline: "",
+    toggles: {
+      nda_required: false,
+      intent_to_participate_req: false,
+      allow_supplier_attachments: false,
+      two_envelope_system: false,
+      bid_bond_required: false,
+      site_visit_required: false,
+      price_negotiation_enabled: false,
+    },
+    techWeight: undefined,
+    commercialWeight: undefined,
+    bidValidityDays: undefined,
+    taxInclusive: undefined,
+    siteVisitDate: "",
+    siteVisitLocation: "",
     sections: t.sections.map(s => ({ ...s, questions: s.questions.map(q => ({ ...q })) })),
-    items: t.items.map(i => ({ ...i })),
+    items: [],
+    participants: [],
+    reminders: [],
+    evaluators: [],
     _templateName: t.name,
   };
 }
@@ -472,21 +492,25 @@ function Step0({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 ════════════════════════════════════════════════════════════════════ */
 function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
   const cfg = TYPE_CONFIG[wiz.type];
+  const fromTemplate = !!wiz._templateName;
 
   return (
     <div>
       <StepHeader title="Basic details" sub="Core event information visible to all invited suppliers." />
-      {wiz._templateName && (
+      {fromTemplate && (
         <div className="flex items-center gap-2 mb-4 px-3.5 py-2.5 bg-primary/5 border border-primary/20 rounded-xl">
           <LayoutTemplate size={13} className="text-primary flex-shrink-0" />
           <span className="text-[12px] text-primary font-medium">
-            Pre-filled from template <strong>{wiz._templateName}</strong> — review and adjust as needed.
+            Pre-filled from template <strong>{wiz._templateName}</strong> — fill in the details below to continue.
           </span>
         </div>
       )}
       <Card>
         <Field label="Event title" required>
-          <Input defaultValue={wiz._templateName ?? "Annual Decorative Lighting Contract"} />
+          <Input
+            placeholder="Enter event title…"
+            defaultValue={fromTemplate ? "" : "Annual Decorative Lighting Contract"}
+          />
         </Field>
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Field label="Reference number">
@@ -508,7 +532,8 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         <div className="mt-3">
           <Field label="Description / scope summary">
             <Textarea
-              defaultValue="Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."
+              defaultValue={fromTemplate ? "" : "Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."}
+              placeholder={fromTemplate ? "Enter a description or scope summary…" : ""}
               className="min-h-[72px] resize-none"
             />
           </Field>
@@ -519,10 +544,13 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
       <Card>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Submission deadline" required>
-            <DateTimePicker defaultValue="2026-09-30T00:00" />
+            <DateTimePicker
+              value={wiz.deadline ?? (fromTemplate ? "" : "2026-09-30T00:00")}
+              onChange={val => setWiz(w => ({ ...w, deadline: val }))}
+            />
           </Field>
           <Field label="Clarification deadline">
-            <DateTimePicker defaultValue="2026-09-15T00:00" />
+            <DateTimePicker defaultValue={fromTemplate ? "" : "2026-09-15T00:00"} />
           </Field>
         </div>
       </Card>
@@ -533,11 +561,12 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           <Card>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Estimated contract value (₹)">
-                <Input defaultValue="50,00,000" />
+                <Input defaultValue={fromTemplate ? "" : "50,00,000"} placeholder={fromTemplate ? "e.g. 50,00,000" : ""} />
                 <p className="text-[11px] text-slate-400 mt-1">Internal — not shown to suppliers.</p>
               </Field>
               <Field label="Currency">
                 <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400">
+                  <option value="">Select currency…</option>
                   <option>INR – Indian Rupee</option>
                   <option>USD – US Dollar</option>
                   <option>EUR – Euro</option>
@@ -558,21 +587,20 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         </>
       )}
 
-      {/* RFP-specific: Evaluation methodology */}
       {wiz.type === "RFP" && (
         <>
           <SectionDivider>Evaluation methodology</SectionDivider>
           <Card>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Technical weight (%)">
-                <Input type="number" value={wiz.techWeight} onChange={e => {
+                <Input type="number" value={wiz.techWeight ?? ""} onChange={e => {
                   const t = parseInt(e.target.value) || 0;
                   setWiz(w => ({ ...w, techWeight: t, commercialWeight: 100 - t }));
-                }} min={0} max={100} />
-                <p className="text-[11px] text-slate-400 mt-1">Remaining {wiz.commercialWeight}% is commercial weight.</p>
+                }} min={0} max={100} placeholder="e.g. 70" />
+                <p className="text-[11px] text-slate-400 mt-1">Remaining {wiz.commercialWeight ?? 0}% is commercial weight.</p>
               </Field>
               <Field label="Min. qualification score (%)">
-                <Input type="number" defaultValue="70" min={0} max={100} />
+                <Input type="number" defaultValue={fromTemplate ? "" : "70"} placeholder={fromTemplate ? "e.g. 70" : ""} min={0} max={100} />
                 <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from commercial evaluation.</p>
               </Field>
               <Field label="Award basis">
@@ -587,7 +615,6 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         </>
       )}
 
-      {/* RFQ-specific: Award basis */}
       {wiz.type === "RFQ" && (
         <>
           <SectionDivider>Award basis</SectionDivider>
@@ -601,7 +628,7 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                 </select>
               </Field>
               <Field label="Min. qualification score (%)">
-                <Input type="number" defaultValue="70" min={0} max={100} />
+                <Input type="number" defaultValue={fromTemplate ? "" : "70"} placeholder={fromTemplate ? "e.g. 70" : ""} min={0} max={100} />
                 <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from price comparison.</p>
               </Field>
               <Field label="Bid validity (days)" required>
@@ -1028,6 +1055,8 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiDone, setAiDone] = useState(false);
   const [newQId, setNewQId] = useState<number | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
   const canAISuggest = !!wiz.category && !!AI_SUGGESTED_SECTIONS[wiz.category];
 
@@ -1056,6 +1085,7 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     if (!wiz.category || !AI_SUGGESTED_SECTIONS[wiz.category]) return;
     setAiGenerating(true);
     setTimeout(() => {
+      if (!mountedRef.current) return;
       const suggested = AI_SUGGESTED_SECTIONS[wiz.category];
       const newSections: WizSection[] = suggested.map((s, si) => ({
         id: Date.now() + si,
@@ -1531,7 +1561,7 @@ function Step7({ wiz }: { wiz: WizState }) {
 
   const checks = [
     { ok: true,                         label: "Event title provided" },
-    { ok: true,                         label: "Submission deadline set" },
+    { ok: !!wiz.deadline,               label: wiz.deadline ? "Submission deadline set" : "Submission deadline not set" },
     {
       ok: wiz.type === "RFI" || wiz.type === "RFP" || wiz.items.length > 0,
       label: wiz.type === "RFI" ? "Line items not required for RFI"
@@ -1555,7 +1585,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     { label: "Type",          value: <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-lg", meta.accent.pill)}>{meta.short}</span> },
     { label: "Format",        value: fmtLabel },
     { label: "Event name",    value: "Annual Decorative Lighting Contract" },
-    { label: "Deadline",      value: "30 Sep 2026" },
+    { label: "Deadline",      value: wiz.deadline ? new Date(wiz.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—" },
     ...(cfg.showPricing ? [{ label: "Est. value", value: "₹50,00,000" }] : []),
     ...(cfg.showPricing ? [{ label: "Bid validity", value: wiz.bidValidityDays ? `${wiz.bidValidityDays} days` : "—" }] : []),
     { label: wiz.type === "RFQ" ? "BOQ items" : "Line items",
