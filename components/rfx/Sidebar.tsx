@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { AppView } from "@/lib/rfx-types";
-import { Calendar, FileText, ArrowRight } from "lucide-react";
+import { Calendar, FileText, ArrowRight, LayoutDashboard, Users, LayoutTemplate, Settings, BarChart3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NavItem {
@@ -14,8 +14,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "events",    label: "Events",    icon: <Calendar size={15} />, badge: 3, view: "events" },
+  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} />, view: "dashboard" },
+  { id: "events", label: "Events", icon: <Calendar size={15} />, badge: 3, view: "events" },
   { id: "responses", label: "Responses", icon: <FileText size={15} />, badge: 5, view: "responses" },
+  // { id: "suppliers",  label: "Suppliers",  icon: <Users size={15} />,           view: "suppliers" },
+  { id: "templates", label: "Templates", icon: <LayoutTemplate size={15} />, view: "templates" },
+  // { id: "reports",    label: "Reports",    icon: <BarChart3 size={15} />,       view: "reports" },
+  // { id: "settings",   label: "Settings",   icon: <Settings size={15} />,        view: "settings" },
 ];
 
 interface SidebarProps {
@@ -25,8 +30,13 @@ interface SidebarProps {
 
 export function Sidebar({ activeView, onNavigate }: SidebarProps) {
   const isActive = (item: NavItem) => {
-    if (item.id === "events")    return activeView === "events" || activeView === "event" || activeView === "event-preview" || activeView === "wizard";
+    if (item.id === "dashboard") return activeView === "dashboard";
+    if (item.id === "events") return ["events", "event", "event-preview", "wizard", "published"].includes(activeView);
     if (item.id === "responses") return ["responses", "eval", "clarif", "award"].includes(activeView);
+    if (item.id === "suppliers") return activeView === "suppliers";
+    if (item.id === "templates") return activeView === "templates";
+    if (item.id === "reports") return activeView === "reports";
+    if (item.id === "settings") return activeView === "settings";
     return false;
   };
 
@@ -48,7 +58,7 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
       <ScrollArea className="flex-1">
         <div className="py-2">
           <div className="px-5 py-3 text-[10px] font-semibold tracking-[0.1em] text-white/30 uppercase">Main</div>
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter(i => !["reports", "settings"].includes(i.id)).map((item) => (
             <button
               key={item.id}
               onClick={() => onNavigate(item.view)}
@@ -66,6 +76,23 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
                   {item.badge}
                 </span>
               )}
+            </button>
+          ))}
+          <div className="mx-4 my-2 border-t border-white/[0.06]" />
+          {/* <div className="px-5 py-2 text-[10px] font-semibold tracking-[0.1em] text-white/30 uppercase">System</div> */}
+          {NAV_ITEMS.filter(i => ["reports", "settings"].includes(i.id)).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.view)}
+              className={cn(
+                "w-full flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-lg text-[13px] transition-all cursor-pointer",
+                "text-white/55 hover:bg-white/[0.08] hover:text-white/85",
+                isActive(item) && "bg-sky-500/[0.18] text-sky-300 font-medium"
+              )}
+              style={{ width: "calc(100% - 12px)" }}
+            >
+              {item.icon}
+              <span className="flex-1 text-left">{item.label}</span>
             </button>
           ))}
         </div>
