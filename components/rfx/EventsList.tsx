@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TypeBadge, StatusBadge } from "./shared";
-import { Plus, PenLine } from "lucide-react";
-import type { RFXEvent, EventStatus, AppView } from "@/lib/rfx-types";
+import { Plus, PenLine, Star } from "lucide-react";
+import type { RFXEvent, EventStatus } from "@/lib/rfx-types";
 import { cn } from "@/lib/utils";
 
 const FILTER_TABS: { key: "ALL" | EventStatus; label: string }[] = [
@@ -18,13 +18,15 @@ const FILTER_TABS: { key: "ALL" | EventStatus; label: string }[] = [
 
 interface EventsListProps {
   events: RFXEvent[];
+  starredIds: Set<number>;
+  onToggleStar: (id: number) => void;
   onCreateEvent: () => void;
   onViewEvent: (id: number) => void;
   onEvaluateEvent: (id: number) => void;
   onEditDraft: (id: number) => void;
 }
 
-export function EventsList({ events, onCreateEvent, onViewEvent, onEvaluateEvent, onEditDraft }: EventsListProps) {
+export function EventsList({ events, starredIds, onToggleStar, onCreateEvent, onViewEvent, onEvaluateEvent, onEditDraft }: EventsListProps) {
   const [filter, setFilter] = useState<"ALL" | EventStatus>("ALL");
 
   const filtered = filter === "ALL" ? events : events.filter((e) => e.status === filter);
@@ -125,6 +127,15 @@ export function EventsList({ events, onCreateEvent, onViewEvent, onEvaluateEvent
                     </div>
                   </>
                 )}
+
+                {/* Star */}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleStar(ev.id); }}
+                  className="flex-shrink-0 p-1 rounded hover:bg-amber-50 transition-colors"
+                  title={starredIds.has(ev.id) ? "Unstar" : "Star"}
+                >
+                  <Star size={15} className={starredIds.has(ev.id) ? "text-amber-400 fill-amber-400" : "text-slate-300 hover:text-amber-300"} />
+                </button>
 
                 {/* Action */}
                 <div className="flex gap-1.5 items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>

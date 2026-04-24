@@ -47,32 +47,31 @@ const TYPE_BG: Record<EventType, string> = {
   RFQ:     "from-amber-50 to-white border-amber-100",
 };
 
-export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) {
+export function TemplatesView({ onUseTemplate, starredIds, onToggleStar }: {
+  onUseTemplate: (id: number) => void;
+  starredIds: Set<number>;
+  onToggleStar: (id: number) => void;
+}) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"ALL" | EventType>("ALL");
   const [category, setCategory] = useState("All");
-  const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  const filtered = templates.filter(t => {
+  const filtered = TEMPLATES.filter(t => {
     const matchSearch = !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase());
     const matchType   = typeFilter === "ALL" || t.type === typeFilter;
     const matchCat    = category === "All" || t.category === category;
     return matchSearch && matchType && matchCat;
   });
 
-  const starred    = filtered.filter(t => t.starred);
-  const unstarred  = filtered.filter(t => !t.starred);
-
-  function toggleStar(id: number) {
-    setTemplates(ts => ts.map(t => t.id !== id ? t : { ...t, starred: !t.starred }));
-  }
+  const starred   = filtered.filter(t => starredIds.has(t.id));
+  const unstarred = filtered.filter(t => !starredIds.has(t.id));
 
   const counts: Record<"ALL" | EventType, number> = {
-    ALL:     templates.length,
-    RFI:     templates.filter(t => t.type === "RFI").length,
-    RFP:     templates.filter(t => t.type === "RFP").length,
-    RFQ:     templates.filter(t => t.type === "RFQ").length,
+    ALL: TEMPLATES.length,
+    RFI: TEMPLATES.filter(t => t.type === "RFI").length,
+    RFP: TEMPLATES.filter(t => t.type === "RFP").length,
+    RFQ: TEMPLATES.filter(t => t.type === "RFQ").length,
   };
 
   return (
@@ -81,7 +80,7 @@ export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) 
       <div className="flex items-start justify-between mb-5">
         <div>
           <h1 className="text-[20px] font-bold text-slate-900">Templates</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">{templates.length} reusable event templates · Speed up your procurement workflow</p>
+          <p className="text-[13px] text-slate-500 mt-0.5">{TEMPLATES.length} reusable event templates · Speed up your procurement workflow</p>
         </div>
         <Button size="sm" className="gap-1.5"><Plus size={13} /> Create template</Button>
       </div>
@@ -125,7 +124,7 @@ export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) 
             <span className="text-[11px] text-slate-400">({starred.length})</span>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            {starred.map(t => <TemplateCard key={t.id} template={t} onUse={onUseTemplate} onToggleStar={toggleStar} />)}
+            {starred.map(t => <TemplateCard key={t.id} template={t} isStarred={starredIds.has(t.id)} onUse={onUseTemplate} onToggleStar={onToggleStar} />)}
           </div>
         </div>
       )}
@@ -139,7 +138,7 @@ export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) 
             <span className="text-[11px] text-slate-400">({unstarred.length})</span>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            {unstarred.map(t => <TemplateCard key={t.id} template={t} onUse={onUseTemplate} onToggleStar={toggleStar} />)}
+            {unstarred.map(t => <TemplateCard key={t.id} template={t} isStarred={starredIds.has(t.id)} onUse={onUseTemplate} onToggleStar={onToggleStar} />)}
           </div>
         </div>
       )}
@@ -147,15 +146,15 @@ export function TemplatesView({ onUseTemplate }: { onUseTemplate: () => void }) 
   );
 }
 
-function TemplateCard({ template: t, onUse, onToggleStar }: {
-  template: Template; onUse: () => void; onToggleStar: (id: number) => void;
+function TemplateCard({ template: t, isStarred, onUse, onToggleStar }: {
+  template: Template; isStarred: boolean; onUse: (id: number) => void; onToggleStar: (id: number) => void;
 }) {
   return (
     <div className={cn("bg-gradient-to-b border rounded-xl p-4 hover:shadow-md transition-all group relative", TYPE_BG[t.type])}>
       {/* star button */}
       <button onClick={() => onToggleStar(t.id)}
         className="absolute top-3.5 right-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-amber-400">
-        {t.starred ? <Star size={14} className="text-amber-400 fill-amber-400" /> : <StarOff size={14} />}
+        {isStarred ? <Star size={14} className="text-amber-400 fill-amber-400" /> : <StarOff size={14} />}
       </button>
 
       <div className="flex items-start gap-2.5 mb-2.5">
@@ -187,7 +186,7 @@ function TemplateCard({ template: t, onUse, onToggleStar }: {
           <button className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:text-red-500 hover:border-red-200 transition-all">
             <Trash2 size={12} />
           </button>
-          <Button size="sm" onClick={onUse} className="h-7 text-[11px] gap-1 px-2.5">
+          <Button size="sm" onClick={() => onUse(t.id)} className="h-7 text-[11px] gap-1 px-2.5">
             <Copy size={11} /> Use
           </Button>
         </div>

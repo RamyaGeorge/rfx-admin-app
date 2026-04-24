@@ -21,6 +21,7 @@ import {
   CLARIFICATIONS_BY_EVENT,
   CRITERIA,
   DEFAULT_WIZ_STATE,
+  TEMPLATE_WIZ_DATA,
 } from "@/lib/rfx-data";
 import type {
   AppView, RFXEvent, ActiveEvent, SupplierResponse, Clarification, WizState,
@@ -72,6 +73,24 @@ export default function Home() {
   const [publishedCount, setPublishedCount] = useState(0);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [wizardTemplate, setWizardTemplate] = useState<TemplateWizData | undefined>(undefined);
+  const [starredEventIds, setStarredEventIds] = useState<Set<number>>(new Set());
+  const [starredTemplateIds, setStarredTemplateIds] = useState<Set<number>>(new Set([1, 2, 5, 9]));
+
+  function toggleStarEvent(id: number) {
+    setStarredEventIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleStarTemplate(id: number) {
+    setStarredTemplateIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   function navigate(v: AppView) { setView(v); }
 
@@ -126,6 +145,8 @@ export default function Home() {
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onConfirm={handleCreateModalConfirm}
+        events={events}
+        starredEventIds={starredEventIds}
       />
       <Sidebar activeView={view} onNavigate={navigate} />
 
@@ -159,6 +180,8 @@ export default function Home() {
           {view === "events" && (
             <EventsList
               events={events}
+              starredIds={starredEventIds}
+              onToggleStar={toggleStarEvent}
               onCreateEvent={handleCreateEvent}
               onViewEvent={(id) => {
                 const ev = events.find(e => e.id === id);
@@ -228,7 +251,15 @@ export default function Home() {
           {view === "suppliers" && <SuppliersView />}
 
           {view === "templates" && (
-            <TemplatesView onUseTemplate={() => navigate("wizard")} />
+            <TemplatesView
+              starredIds={starredTemplateIds}
+              onToggleStar={toggleStarTemplate}
+              onUseTemplate={(id) => {
+                const tpl = TEMPLATE_WIZ_DATA.find(t => t.id === id);
+                setWizardTemplate(tpl);
+                navigate("wizard");
+              }}
+            />
           )}
 
           {view === "published" && (

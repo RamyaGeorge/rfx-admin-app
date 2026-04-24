@@ -113,6 +113,7 @@ export interface WizQuestion {
   scored: boolean;
   weight?: number;
   options?: string[];
+  conditionalOn?: { questionId: number; answer: string };
 }
 
 export interface WizSection {

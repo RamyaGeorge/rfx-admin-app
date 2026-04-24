@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutTemplate, FileEdit, X, Search, Star, Clock, ChevronLeft, Copy, Check } from "lucide-react";
+import { LayoutTemplate, FileEdit, X, Search, Star, ChevronLeft, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { TEMPLATE_WIZ_DATA, type TemplateWizData } from "@/lib/rfx-data";
-import type { EventType } from "@/lib/rfx-types";
+import type { EventType, RFXEvent } from "@/lib/rfx-types";
 
 type CreateMode = "template" | "blank";
 
@@ -13,6 +13,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: (template?: TemplateWizData) => void;
+  events: RFXEvent[];
+  starredEventIds: Set<number>;
 }
 
 const TYPE_PILL: Record<EventType, string> = {
@@ -21,19 +23,33 @@ const TYPE_PILL: Record<EventType, string> = {
   RFQ: "bg-amber-100 text-amber-700",
 };
 
-const STARRED_IDS = new Set([1, 2, 5, 9]);
-
-function TemplatePicker({ onSelect, onBack }: { onSelect: (t: TemplateWizData) => void; onBack: () => void }) {
+function EventPicker({ onSelect, onBack, events, starredEventIds }: {
+  onSelect: (t: TemplateWizData) => void;
+  onBack: () => void;
+  events: RFXEvent[];
+  starredEventIds: Set<number>;
+}) {
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<number | null>(null);
 
-  const filtered = TEMPLATE_WIZ_DATA.filter(t =>
+  const starredEvents = events.filter(e => starredEventIds.has(e.id));
+
+  const filtered = starredEvents.filter(e =>
     !search ||
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.category.toLowerCase().includes(search.toLowerCase())
+    e.title.toLowerCase().includes(search.toLowerCase()) ||
+    e.number.toLowerCase().includes(search.toLowerCase())
   );
-  const starred   = filtered.filter(t => STARRED_IDS.has(t.id));
-  const rest      = filtered.filter(t => !STARRED_IDS.has(t.id));
+
+  function handleUse() {
+    const ev = events.find(e => e.id === picked);
+    if (!ev) return;
+    // Map the starred event to TemplateWizData by matching TEMPLATE_WIZ_DATA by name similarity or just use blank with type
+    const match = TEMPLATE_WIZ_DATA.find(t => t.type === ev.type);
+    const tpl: TemplateWizData = match
+      ? { ...match, name: ev.title, id: ev.id }
+      : { id: ev.id, name: ev.title, type: ev.type, category: "", description: "", sections: [], items: [] };
+    onSelect(tpl);
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -53,7 +69,7 @@ function TemplatePicker({ onSelect, onBack }: { onSelect: (t: TemplateWizData) =
       <div className="relative mb-3">
         <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <Input
-          placeholder="Search templates…"
+          placeholder="Search starred events…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="pl-8 h-8 text-[12px]"
@@ -62,30 +78,49 @@ function TemplatePicker({ onSelect, onBack }: { onSelect: (t: TemplateWizData) =
 
       {/* List */}
       <div className="flex-1 overflow-y-auto space-y-1 min-h-0 pr-0.5">
-        {filtered.length === 0 && (
-          <p className="text-center text-[12px] text-slate-400 py-6">No templates match your search.</p>
-        )}
-
-        {starred.length > 0 && (
+        {starredEvents.length === 0 ? (
+          <div className="py-10 text-center">
+            <Star size={24} className="text-slate-200 mx-auto mb-2" />
+            <p className="text-[12px] text-slate-400 font-medium">No starred events yet.</p>
+            <p className="text-[11px] text-slate-300 mt-0.5">Star events from the Events list to use them as templates.</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-[12px] text-slate-400 py-6">No starred events match your search.</p>
+        ) : (
           <>
             <div className="flex items-center gap-1.5 px-1 py-1">
               <Star size={11} className="text-amber-400 fill-amber-400" />
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Starred</span>
             </div>
-            {starred.map(t => (
-              <TemplateRow key={t.id} t={t} selected={picked === t.id} onPick={setPicked} />
-            ))}
-          </>
-        )}
+            {filtered.map(ev => (
+              <button
+                key={ev.id}
+                onClick={() => setPicked(ev.id)}
+                className={cn(
+                  "w-full flex items-start gap-3 px-3 py-2.5 rounded-xl border text-left transition-all",
+                  picked === ev.id
+                    ? "border-primary bg-primary/5"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                )}
+              >
+                {/* radio */}
+                <div className={cn(
+                  "w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors",
+                  picked === ev.id ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                )}>
+                  {picked === ev.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </div>
 
-        {rest.length > 0 && (
-          <>
-            <div className="flex items-center gap-1.5 px-1 py-1 mt-2">
-              <Clock size={11} className="text-slate-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">All templates</span>
-            </div>
-            {rest.map(t => (
-              <TemplateRow key={t.id} t={t} selected={picked === t.id} onPick={setPicked} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", TYPE_PILL[ev.type])}>{ev.type}</span>
+                    <span className="text-[12px] font-semibold text-slate-900 truncate">{ev.title}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate">{ev.number}</p>
+                </div>
+
+                {picked === ev.id && <Check size={14} className="text-primary flex-shrink-0 mt-0.5" />}
+              </button>
             ))}
           </>
         )}
@@ -101,56 +136,17 @@ function TemplatePicker({ onSelect, onBack }: { onSelect: (t: TemplateWizData) =
         </button>
         <button
           disabled={!picked}
-          onClick={() => {
-            const t = TEMPLATE_WIZ_DATA.find(t => t.id === picked);
-            if (t) onSelect(t);
-          }}
+          onClick={handleUse}
           className="flex items-center gap-1.5 px-5 py-2 text-[13px] font-semibold bg-primary text-white rounded-xl hover:bg-primary/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Copy size={13} /> Use template
+          Use template
         </button>
       </div>
     </div>
   );
 }
 
-function TemplateRow({ t, selected, onPick }: {
-  t: TemplateWizData;
-  selected: boolean;
-  onPick: (id: number) => void;
-}) {
-  return (
-    <button
-      onClick={() => onPick(t.id)}
-      className={cn(
-        "w-full flex items-start gap-3 px-3 py-2.5 rounded-xl border text-left transition-all",
-        selected
-          ? "border-primary bg-primary/5"
-          : "border-slate-200 hover:border-slate-300 bg-white"
-      )}
-    >
-      {/* radio */}
-      <div className={cn(
-        "w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors",
-        selected ? "border-primary bg-primary" : "border-slate-300 bg-white"
-      )}>
-        {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", TYPE_PILL[t.type])}>{t.type}</span>
-          <span className="text-[12px] font-semibold text-slate-900 truncate">{t.name}</span>
-        </div>
-        <p className="text-[11px] text-slate-400 truncate">{t.category} · {t.sections.length} sections · {t.sections.reduce((n, s) => n + s.questions.length, 0)} questions{t.items.length > 0 ? ` · ${t.items.length} items` : ""}</p>
-      </div>
-
-      {selected && <Check size={14} className="text-primary flex-shrink-0 mt-0.5" />}
-    </button>
-  );
-}
-
-export function CreateEventModal({ open, onClose, onConfirm }: Props) {
+export function CreateEventModal({ open, onClose, onConfirm, events, starredEventIds }: Props) {
   const [selected, setSelected] = useState<CreateMode>("blank");
   const [showPicker, setShowPicker] = useState(false);
 
@@ -180,7 +176,7 @@ export function CreateEventModal({ open, onClose, onConfirm }: Props) {
       mode: "template",
       icon: <LayoutTemplate size={20} strokeWidth={1.8} />,
       title: "From a template",
-      sub: "Select a template to start a new request",
+      sub: "Select a starred event to use as a starting point",
     },
     {
       mode: "blank",
@@ -204,9 +200,11 @@ export function CreateEventModal({ open, onClose, onConfirm }: Props) {
         </button>
 
         {showPicker ? (
-          <TemplatePicker
+          <EventPicker
             onSelect={handleTemplateSelect}
             onBack={() => setShowPicker(false)}
+            events={events}
+            starredEventIds={starredEventIds}
           />
         ) : (
           <>

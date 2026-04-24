@@ -810,12 +810,22 @@ function Step3({ wiz }: { wiz: WizState }) {
 /* ════════════════════════════════════════════════════════════════════
    Step 4 — Questionnaire
 ════════════════════════════════════════════════════════════════════ */
+const CONDITIONAL_QTYPES = ["BOOLEAN", "SINGLE_CHOICE", "MULTI_CHOICE"];
+const BOOLEAN_ANSWERS = ["Yes", "No"];
+
+function getAnswerOptions(parentQ: WizQuestion): string[] {
+  if (parentQ.qtype === "BOOLEAN") return BOOLEAN_ANSWERS;
+  if (parentQ.qtype === "SINGLE_CHOICE" || parentQ.qtype === "MULTI_CHOICE") return parentQ.options ?? [];
+  return [];
+}
+
 function QuestionRow({
-  q, si, qi, onUpdate, onDelete, defaultEditing = false, onEditOpened,
+  q, si, qi, siblingQuestions, onUpdate, onDelete, defaultEditing = false, onEditOpened,
 }: {
   q: WizQuestion;
   si: number;
   qi: number;
+  siblingQuestions: WizQuestion[];
   onUpdate: (si: number, qi: number, field: keyof WizQuestion, val: unknown) => void;
   onDelete: (si: number, qi: number) => void;
   defaultEditing?: boolean;
@@ -826,7 +836,31 @@ function QuestionRow({
   // Notify parent once that this row has consumed the auto-open signal
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (defaultEditing) onEditOpened?.(); }, []);
-  const [draft, setDraft] = useState({ text: q.text, qtype: q.qtype, mandatory: q.mandatory, scored: q.scored, weight: q.weight ?? 0 });
+
+  const [draft, setDraft] = useState({
+    text: q.text,
+    qtype: q.qtype,
+    mandatory: q.mandatory,
+    scored: q.scored,
+    weight: q.weight ?? 0,
+    conditionalOn: q.conditionalOn ?? null as { questionId: number; answer: string } | null,
+  });
+
+  // Questions in same section that can be a parent (only BOOLEAN/SINGLE_CHOICE/MULTI_CHOICE, excluding self)
+  const eligibleParents = siblingQuestions.filter(
+    s => s.id !== q.id && CONDITIONAL_QTYPES.includes(s.qtype)
+  );
+
+  const selectedParent = eligibleParents.find(p => p.id === draft.conditionalOn?.questionId) ?? null;
+  const answerOptions  = selectedParent ? getAnswerOptions(selectedParent) : [];
+
+  function handleParentChange(parentId: string) {
+    if (!parentId) {
+      setDraft(d => ({ ...d, conditionalOn: null }));
+    } else {
+      setDraft(d => ({ ...d, conditionalOn: { questionId: Number(parentId), answer: "" } }));
+    }
+  }
 
   function commitEdit() {
     onUpdate(si, qi, "text", draft.text);
@@ -834,13 +868,18 @@ function QuestionRow({
     onUpdate(si, qi, "mandatory", draft.mandatory);
     onUpdate(si, qi, "scored", draft.scored);
     onUpdate(si, qi, "weight", draft.weight);
+    onUpdate(si, qi, "conditionalOn", draft.conditionalOn ?? undefined);
     setEditing(false);
   }
 
   function discardEdit() {
-    setDraft({ text: q.text, qtype: q.qtype, mandatory: q.mandatory, scored: q.scored, weight: q.weight ?? 0 });
+    setDraft({ text: q.text, qtype: q.qtype, mandatory: q.mandatory, scored: q.scored, weight: q.weight ?? 0, conditionalOn: q.conditionalOn ?? null });
     setEditing(false);
   }
+
+  const condParentLabel = q.conditionalOn
+    ? siblingQuestions.find(s => s.id === q.conditionalOn!.questionId)?.text
+    : null;
 
   if (editing) {
     return (
@@ -892,6 +931,44 @@ function QuestionRow({
               </div>
             </div>
           )}
+
+          {/* Conditional logic */}
+          <div className="border-t border-slate-100 pt-3">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">Show this question conditionally</label>
+            {eligibleParents.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">No eligible parent questions in this section. Add a Boolean or Choice question above first.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Show when question</label>
+                  <select
+                    value={draft.conditionalOn?.questionId ?? ""}
+                    onChange={e => handleParentChange(e.target.value)}
+                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[12px] bg-white text-slate-700 focus:outline-none focus:border-slate-400"
+                  >
+                    <option value="">— No condition —</option>
+                    {eligibleParents.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.text ? (p.text.length > 40 ? p.text.slice(0, 40) + "…" : p.text) : `Question ${p.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Answer is</label>
+                  <select
+                    disabled={!draft.conditionalOn?.questionId || answerOptions.length === 0}
+                    value={draft.conditionalOn?.answer ?? ""}
+                    onChange={e => setDraft(d => ({ ...d, conditionalOn: d.conditionalOn ? { ...d.conditionalOn, answer: e.target.value } : null }))}
+                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[12px] bg-white text-slate-700 focus:outline-none focus:border-slate-400 disabled:opacity-40"
+                  >
+                    <option value="">— Select answer —</option>
+                    {answerOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 pt-1">
           <button onClick={commitEdit} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-1.5 rounded-lg hover:bg-primary/80 transition-colors">
@@ -906,14 +983,19 @@ function QuestionRow({
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50/60 transition-colors group">
+    <div className={cn("flex items-center gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50/60 transition-colors group", q.conditionalOn && "border-l-2 border-l-violet-300 bg-violet-50/30")}>
       <GripVertical size={13} className="text-slate-300 cursor-grab flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-[13px] text-slate-800 truncate">{q.text || <span className="text-slate-400 italic">No question text</span>}</p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{QTYPE_LABELS[q.qtype]}</span>
           {q.mandatory && <span className="text-[10px] font-medium text-red-500 bg-red-50 px-1.5 py-0.5 rounded">Required</span>}
           {q.scored && <span className="text-[10px] font-medium text-primary bg-primary/8 px-1.5 py-0.5 rounded">Scored · {q.weight ?? 0}%</span>}
+          {q.conditionalOn && (
+            <span className="text-[10px] font-medium text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
+              If &quot;{condParentLabel ? (condParentLabel.length > 30 ? condParentLabel.slice(0, 30) + "…" : condParentLabel) : "?"}&quot; = {q.conditionalOn.answer}
+            </span>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -1110,6 +1192,7 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
               <QuestionRow
                 key={q.id}
                 q={q} si={si} qi={qi}
+                siblingQuestions={sec.questions}
                 onUpdate={updateQ}
                 onDelete={delQ}
                 defaultEditing={q.id === newQId}
