@@ -934,11 +934,17 @@ function QuestionRow({
 
           {/* Conditional logic */}
           <div className="border-t border-slate-100 pt-3">
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">Show this question conditionally</label>
-            {eligibleParents.length === 0 ? (
-              <p className="text-[11px] text-slate-400 italic">No eligible parent questions in this section. Add a Boolean or Choice question above first.</p>
+            <label className="flex items-center gap-2 text-[12px] text-slate-600 cursor-pointer mb-2">
+              <Checkbox
+                checked={!!draft.conditionalOn}
+                onCheckedChange={v => setDraft(d => ({ ...d, conditionalOn: v ? { questionId: 0, answer: "" } : null }))}
+              />
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Show this question conditionally</span>
+            </label>
+            {draft.conditionalOn && (eligibleParents.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic ml-6">No eligible parent questions in this section. Add a Boolean or Choice question above first.</p>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 ml-6">
                 <div>
                   <label className="block text-[10px] text-slate-400 mb-1">Show when question</label>
                   <select
@@ -967,7 +973,7 @@ function QuestionRow({
                   </select>
                 </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
         <div className="flex items-center gap-2 pt-1">
@@ -1102,29 +1108,29 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           inline
         />
         <div className="flex items-center gap-2 flex-shrink-0">
-          {canAISuggest && (
+          <div title={!canAISuggest ? "Select a category in Basic details to enable AI suggestions" : ""}>
             <button
               onClick={handleAISuggest}
-              disabled={aiGenerating}
-              className="flex items-center gap-1.5 text-[12px] font-semibold border border-primary text-primary px-3.5 py-2 rounded-xl hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!canAISuggest || aiGenerating}
+              className="flex items-center gap-1.5 text-[12px] font-semibold border border-primary text-primary px-3.5 py-2 rounded-xl hover:bg-primary/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {aiGenerating
                 ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
                 : <><Sparkles size={13} /> AI suggest</>
               }
             </button>
-          )}
+          </div>
           <button onClick={addSection} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors">
             <Plus size={13} /> Add section
           </button>
         </div>
       </div>
 
-      {!canAISuggest && wiz.sections.length === 0 && (
-        <div className="flex items-start gap-2 mb-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
-          <Sparkles size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
-          <p className="text-[12px] text-amber-700">
-            Select a <strong>category</strong> in Step 2 — Basic details to enable AI-suggested sections and questions.
+      {!canAISuggest && !wiz.category && (
+        <div className="flex items-center gap-2 mb-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <Sparkles size={13} className="text-slate-400 flex-shrink-0" />
+          <p className="text-[12px] text-slate-500">
+            Select a <strong>category</strong> in Basic details to enable AI-suggested questions.
           </p>
         </div>
       )}
