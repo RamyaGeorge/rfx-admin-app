@@ -159,6 +159,15 @@ export interface WizReminder {
   recipients: string[];
   sent: boolean;
   excl_sub: boolean;
+  excl_finalised: boolean;
+  include_link: boolean;
+  repeat_enabled: boolean;
+  repeat_days: string;
+  repeat_hours: string;
+  stop_after: string;
+  stop_repetitions: string;
+  subject: string;
+  body: string;
 }
 
 export interface WizToggles {

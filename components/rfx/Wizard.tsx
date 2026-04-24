@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { InfoBox, ToggleRow, NotApplicable } from "./shared";
 import { SUPPLIER_CATALOGUE, TYPE_CONFIG, DEFAULT_WIZ_STATE } from "@/lib/rfx-data";
 import type { TemplateWizData } from "@/lib/rfx-data";
-import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView, WizEvaluator } from "@/lib/rfx-types";
+import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView, WizEvaluator, WizReminder } from "@/lib/rfx-types";
 import {
   Check, ChevronLeft, ChevronRight, Plus, Search,
   GripVertical, X, CheckCircle2, FileSearch, LayoutList,
@@ -1496,51 +1496,292 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
    Step 6 — Reminders
 ════════════════════════════════════════════════════════════════════ */
 function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
-  const RECIPIENTS = ["MANAGER", "STAKEHOLDER", "SUPPLIER"];
+  const [openId, setOpenId] = useState<number | null>(null);
 
-  function toggleRec(i: number, rc: string) {
-    setWiz(w => ({ ...w, reminders: w.reminders.map((r, ri) => ri !== i ? r : { ...r, recipients: r.recipients.includes(rc) ? r.recipients.filter(x => x !== rc) : [...r.recipients, rc] }) }));
-  }
+  const RECIPIENTS = [
+    { key: "MANAGER",      label: "Manager" },
+    { key: "STAKEHOLDER",  label: "Stakeholder" },
+    { key: "SPECTATOR",    label: "Spectator" },
+    { key: "SPECTATOR_QA", label: "Spectator Q&A" },
+    { key: "SUPPLIER",     label: "Supplier" },
+  ];
+
+  const BLANK_REMINDER = (): WizReminder => ({
+    id: Date.now(),
+    headline: "",
+    scheduled: "2026-09-25T09:00",
+    recipients: [],
+    sent: false,
+    excl_sub: false,
+    excl_finalised: false,
+    include_link: true,
+    repeat_enabled: false,
+    repeat_days: "",
+    repeat_hours: "",
+    stop_after: "after",
+    stop_repetitions: "1",
+    subject: "",
+    body: "",
+  });
+
   function addReminder() {
-    setWiz(w => ({ ...w, reminders: [...w.reminders, { id: Date.now(), headline: "New reminder", scheduled: "2026-09-25T09:00", recipients: ["SUPPLIER"], sent: false, excl_sub: true }] }));
+    const r = BLANK_REMINDER();
+    setWiz(w => ({ ...w, reminders: [...w.reminders, r] }));
+    setOpenId(r.id);
   }
+
+  function updateField<K extends keyof WizReminder>(id: number, field: K, val: WizReminder[K]) {
+    setWiz(w => ({ ...w, reminders: w.reminders.map(r => r.id !== id ? r : { ...r, [field]: val }) }));
+  }
+
+  function toggleRecipient(id: number, key: string) {
+    setWiz(w => ({
+      ...w,
+      reminders: w.reminders.map(r => r.id !== id ? r : {
+        ...r,
+        recipients: r.recipients.includes(key) ? r.recipients.filter(x => x !== key) : [...r.recipients, key],
+      }),
+    }));
+  }
+
+  function deleteReminder(id: number) {
+    setWiz(w => ({ ...w, reminders: w.reminders.filter(r => r.id !== id) }));
+    if (openId === id) setOpenId(null);
+  }
+
+  const openReminder = wiz.reminders.find(r => r.id === openId) ?? null;
 
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
-        <StepHeader title="Reminders" sub="Schedule supplemental notifications for this event." inline />
+        <StepHeader title="Reminders" sub="Schedule email notifications for this event." inline />
         <button onClick={addReminder} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors flex-shrink-0">
           <Plus size={13} /> Add reminder
         </button>
       </div>
-      <div className="mb-4"><InfoBox variant="blue">System notifications (event cancelled, supplier awarded, etc.) always send regardless of these settings.</InfoBox></div>
+      <div className="mb-4">
+        <InfoBox variant="blue">System notifications (event cancelled, supplier awarded, etc.) always send regardless of these settings.</InfoBox>
+      </div>
 
-      {wiz.reminders.length === 0 && <Card><NotApplicable>No reminders yet.</NotApplicable></Card>}
+      {wiz.reminders.length === 0 && <Card><NotApplicable>No reminders yet. Click "Add reminder" to schedule one.</NotApplicable></Card>}
 
-      <div className="space-y-3">
-        {wiz.reminders.map((r, i) => (
-          <div key={r.id} className="bg-white border border-slate-200 rounded-2xl p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="text-[13px] font-semibold text-slate-900">{r.headline}</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">{r.scheduled}</div>
+      {/* Reminder list */}
+      <div className="space-y-2 mb-4">
+        {wiz.reminders.map(r => (
+          <div
+            key={r.id}
+            className={cn(
+              "bg-white border rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all hover:border-slate-300",
+              openId === r.id ? "border-primary ring-1 ring-primary/20" : "border-slate-200"
+            )}
+            onClick={() => setOpenId(openId === r.id ? null : r.id)}
+          >
+            <div className="min-w-0">
+              <div className="text-[13px] font-semibold text-slate-900 truncate">
+                {r.headline || <span className="text-slate-400 font-normal italic">Untitled reminder</span>}
               </div>
-              <div className="flex items-center gap-2">
-                <span className={cn("text-[10px] font-bold uppercase px-2 py-1 rounded-lg tracking-wide", r.sent ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>{r.sent ? "Sent" : "Scheduled"}</span>
-                <button onClick={() => setWiz(w => ({ ...w, reminders: w.reminders.filter((_, ri) => ri !== i) }))} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all">
-                  <X size={12} />
-                </button>
+              <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                <span>{r.scheduled ? r.scheduled.replace("T", " · ") : "No date set"}</span>
+                {r.recipients.length > 0 && (
+                  <span className="text-slate-300">·</span>
+                )}
+                {r.recipients.length > 0 && (
+                  <span>{r.recipients.map(rc => RECIPIENTS.find(x => x.key === rc)?.label ?? rc).join(", ")}</span>
+                )}
               </div>
             </div>
-            <div className="text-[11px] text-slate-400 mb-2">Recipients</div>
-            <div className="flex gap-1.5">
-              {RECIPIENTS.map(rc => (
-                <button key={rc} onClick={() => toggleRec(i, rc)} className={cn("text-[11px] font-medium px-2.5 py-1 rounded-lg border transition-all", r.recipients.includes(rc) ? "bg-primary text-white border-primary" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300")}>{rc}</button>
-              ))}
+            <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+              <span className={cn("text-[10px] font-bold uppercase px-2 py-1 rounded-lg tracking-wide", r.sent ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
+                {r.sent ? "Sent" : "Scheduled"}
+              </span>
+              <button
+                onClick={e => { e.stopPropagation(); deleteReminder(r.id); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all"
+              >
+                <X size={12} />
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Reminder setup form */}
+      {openReminder && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="text-[14px] font-bold text-slate-900 mb-5">Reminder setup</div>
+
+          {/* Title */}
+          <div className="mb-4">
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Title <span className="text-red-400">*</span>
+            </label>
+            <input
+              value={openReminder.headline}
+              onChange={e => updateField(openReminder.id, "headline", e.target.value)}
+              placeholder="Reminder title"
+              className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white"
+            />
+          </div>
+
+          {/* Date / time */}
+          <div className="mb-4">
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Send on
+            </label>
+            <DateTimePicker
+              value={openReminder.scheduled}
+              onChange={val => updateField(openReminder.id, "scheduled", val)}
+              className="h-9"
+            />
+          </div>
+
+          {/* Repeat */}
+          <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <label className="flex items-center gap-2.5 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={openReminder.repeat_enabled}
+                onChange={e => updateField(openReminder.id, "repeat_enabled", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 accent-primary"
+              />
+              <span className="text-[13px] font-medium text-slate-700">Repeat after</span>
+              <input
+                type="number"
+                min={0}
+                value={openReminder.repeat_days}
+                onChange={e => updateField(openReminder.id, "repeat_days", e.target.value)}
+                disabled={!openReminder.repeat_enabled}
+                placeholder="0"
+                className="w-14 h-8 px-2 border border-slate-200 rounded-lg text-[12px] text-center bg-white disabled:opacity-40 focus:outline-none focus:border-primary"
+              />
+              <span className="text-[12px] text-slate-500">days</span>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={openReminder.repeat_hours}
+                onChange={e => updateField(openReminder.id, "repeat_hours", e.target.value)}
+                disabled={!openReminder.repeat_enabled}
+                placeholder="0"
+                className="w-14 h-8 px-2 border border-slate-200 rounded-lg text-[12px] text-center bg-white disabled:opacity-40 focus:outline-none focus:border-primary"
+              />
+              <span className="text-[12px] text-slate-500">hours</span>
+            </label>
+            {openReminder.repeat_enabled && (
+              <div className="flex items-center gap-2 ml-6">
+                <span className="text-[12px] text-slate-500">Stop repeating:</span>
+                <select
+                  value={openReminder.stop_after}
+                  onChange={e => updateField(openReminder.id, "stop_after", e.target.value)}
+                  className="h-8 px-2 border border-slate-200 rounded-lg text-[12px] bg-white focus:outline-none focus:border-primary"
+                >
+                  <option value="after">after</option>
+                  <option value="never">never</option>
+                  <option value="on_date">on date</option>
+                </select>
+                {openReminder.stop_after === "after" && (
+                  <>
+                    <input
+                      type="number"
+                      min={1}
+                      value={openReminder.stop_repetitions}
+                      onChange={e => updateField(openReminder.id, "stop_repetitions", e.target.value)}
+                      className="w-14 h-8 px-2 border border-slate-200 rounded-lg text-[12px] text-center bg-white focus:outline-none focus:border-primary"
+                    />
+                    <span className="text-[12px] text-slate-500">repetitions</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Email content */}
+          <div className="mb-4">
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Email subject <span className="text-red-400">*</span>
+            </label>
+            <input
+              value={openReminder.subject}
+              onChange={e => updateField(openReminder.id, "subject", e.target.value)}
+              placeholder="Subject"
+              className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white"
+            />
+          </div>
+          <div className="mb-5">
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Email body <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={openReminder.body}
+              onChange={e => updateField(openReminder.id, "body", e.target.value)}
+              placeholder="Email text"
+              rows={4}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white resize-none"
+            />
+          </div>
+
+          {/* Recipients */}
+          <div className="mb-4">
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
+              Recipients <span className="text-red-400">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {RECIPIENTS.map(rc => (
+                <label key={rc.key} className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={openReminder.recipients.includes(rc.key)}
+                    onChange={() => toggleRecipient(openReminder.id, rc.key)}
+                    className="w-4 h-4 rounded border-slate-300 accent-primary"
+                  />
+                  <span className="text-[13px] text-slate-700">{rc.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Exclusions */}
+          <div className="mb-5 space-y-2">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={openReminder.excl_sub}
+                onChange={e => updateField(openReminder.id, "excl_sub", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 accent-primary"
+              />
+              <span className="text-[13px] text-slate-700">Exclude suppliers already logged in</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={openReminder.excl_finalised}
+                onChange={e => updateField(openReminder.id, "excl_finalised", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 accent-primary"
+              />
+              <span className="text-[13px] text-slate-700">Exclude suppliers who finalised</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={openReminder.include_link}
+                onChange={e => updateField(openReminder.id, "include_link", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 accent-primary"
+              />
+              <span className="text-[13px] text-slate-700">Include access link in email</span>
+            </label>
+          </div>
+
+          {/* Save */}
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button
+              onClick={() => setOpenId(null)}
+              className="flex items-center gap-1.5 text-[13px] font-semibold bg-primary text-white px-5 py-2 rounded-xl hover:bg-primary/80 transition-colors"
+            >
+              <CheckCircle2 size={14} /> Save
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
