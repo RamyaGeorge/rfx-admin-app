@@ -690,8 +690,8 @@ export const TYPE_CONFIG: Record<string, {
 }> = {
   RFI: {
     color: "#6366f1", bg: "#eef2ff", name: "Request for Information", tagline: "Market research – no pricing collected",
-    steps: ["Event type", "Basic details", "Documents", "Questionnaire", "Suppliers", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Specs & NDA", "Qualification questions", "Invite suppliers", "Schedule reminders", "Final check"],
+    steps: ["Event type", "Basic details", "Documents", "Questionnaire", "Stakeholders", "Suppliers", "Reminders", "Review"],
+    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Specs & NDA", "Qualification questions", "Assign scoring team", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: false, showPricing: false, showBidBond: false, showTwoEnvelope: false, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
     togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments"],
     infoBox: "RFI collects qualitative information only. No BOQ, no pricing, no bid bond. Questionnaire is the primary response mechanism.",
@@ -708,8 +708,8 @@ export const TYPE_CONFIG: Record<string, {
   },
   RFQ: {
     color: "#f59e0b", bg: "#fef3c7", name: "Request for Quotation", tagline: "Competitive price comparison – BOQ mandatory, L1 award",
-    steps: ["Event type", "Basic details", "Bid Matrix", "Documents", "Questionnaire", "Suppliers", "Reminders", "Review"],
-    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Mandatory BOQ — suppliers quote unit prices", "Specs & T&Cs", "Qualification questions (optional)", "Invite suppliers", "Schedule reminders", "Final check"],
+    steps: ["Event type", "Basic details", "Bid Matrix", "Documents", "Questionnaire", "Stakeholders", "Suppliers", "Reminders", "Review"],
+    stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Mandatory BOQ — suppliers quote unit prices", "Specs & T&Cs", "Qualification questions (optional)", "Assign scoring team", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: true, showPricing: true, showBidBond: true, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
     itemsLabel: "Bid Matrix",
     itemsNote: "BOQ is mandatory for RFQ. Suppliers must quote a unit price for every line item.",

@@ -1575,7 +1575,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     },
     { ok: wiz.participants.length > 0,  label: wiz.participants.length > 0 ? `${wiz.participants.length} suppliers invited` : "No suppliers invited yet" },
     { ok: totalQ > 0,                   label: totalQ > 0 ? `${totalQ} total questions` : "No questionnaire sections added" },
-    ...(wiz.type === "RFP" ? [{ ok: wiz.evaluators.length > 0, label: wiz.evaluators.length > 0 ? `${wiz.evaluators.length} stakeholder(s) assigned` : "No stakeholders assigned yet" }] : []),
+    { ok: wiz.evaluators.length > 0, label: wiz.evaluators.length > 0 ? `${wiz.evaluators.length} stakeholder(s) assigned` : "No stakeholders assigned yet" },
     { ok: wiz.reminders.length > 0,     label: `${wiz.reminders.length} reminder(s) scheduled` },
   ];
   const allOk = checks.every(c => c.ok);
@@ -1594,7 +1594,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     { label: "Suppliers",     value: `${wiz.participants.length} invited` },
     { label: "Questionnaire", value: `${totalQ} questions, ${wiz.sections.length} sections` },
     ...(wiz.type === "RFP" ? [{ label: "Scored questions", value: `${scoredQ} (${totalWeight}% total weight)` }] : []),
-    ...(wiz.type === "RFP" ? [{ label: "Stakeholders", value: `${wiz.evaluators.length} assigned` }] : []),
+    { label: "Stakeholders", value: `${wiz.evaluators.length} assigned` },
     { label: "Two-envelope",  value: wiz.toggles.two_envelope_system ? "Yes" : "No" },
     { label: "Reminders",     value: `${wiz.reminders.length} scheduled` },
   ];
