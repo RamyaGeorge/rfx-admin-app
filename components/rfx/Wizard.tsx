@@ -302,16 +302,15 @@ export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
   const meta = TYPE_META.find(m => m.t === wiz.type)!;
 
   const STEP_MAP: Record<string, () => React.ReactNode> = {
-    "Event type":       () => <Step0 wiz={wiz} setWiz={setWiz} />,
-    "Basic details":    () => <Step1 wiz={wiz} setWiz={setWiz} />,
-    "Deliverables":     () => <Step2 wiz={wiz} setWiz={setWiz} />,
-    "Line items (BOQ)": () => <Step2 wiz={wiz} setWiz={setWiz} />,
-    "Documents":        () => <Step3 wiz={wiz} />,
-    "Questionnaire":    () => <Step4 wiz={wiz} setWiz={setWiz} />,
-    "Evaluators":       () => <StepEvaluators wiz={wiz} setWiz={setWiz} />,
-    "Participants":     () => <Step5 wiz={wiz} setWiz={setWiz} />,
-    "Reminders":        () => <Step6 wiz={wiz} setWiz={setWiz} />,
-    "Review":           () => <Step7 wiz={wiz} />,
+    "Event type":    () => <Step0 wiz={wiz} setWiz={setWiz} />,
+    "Basic details": () => <Step1 wiz={wiz} setWiz={setWiz} />,
+    "Bid Matrix":    () => <Step2 wiz={wiz} setWiz={setWiz} />,
+    "Documents":     () => <Step3 wiz={wiz} />,
+    "Questionnaire": () => <Step4 wiz={wiz} setWiz={setWiz} />,
+    "Stakeholders":  () => <StepEvaluators wiz={wiz} setWiz={setWiz} />,
+    "Suppliers":     () => <Step5 wiz={wiz} setWiz={setWiz} />,
+    "Reminders":     () => <Step6 wiz={wiz} setWiz={setWiz} />,
+    "Review":        () => <Step7 wiz={wiz} />,
   };
 
   function handleNext() {
@@ -744,14 +743,14 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
       {wiz.type === "RFQ" && wiz.items.length === 0 && (
         <div className="mb-4">
           <InfoBox variant="amber">
-            <strong>BOQ is mandatory for RFQ.</strong> Suppliers cannot submit without a Bill of Quantities to price. Add at least one line item below.
+            <strong>Bid Matrix is mandatory for RFQ.</strong> Suppliers cannot submit without items to price. Add at least one line item below.
           </InfoBox>
         </div>
       )}
       {wiz.type === "RFP" && (
         <div className="mb-4">
           <InfoBox variant="blue">
-            Deliverables are <strong>optional</strong> for RFP. Add items if you want line-level pricing from suppliers, or skip this step to collect open-form proposals only.
+            Bid Matrix items are <strong>optional</strong> for RFP. Add items if you want line-level pricing from suppliers, or skip this step to collect open-form proposals only.
           </InfoBox>
         </div>
       )}
@@ -1275,12 +1274,12 @@ function StepEvaluators({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
-        <StepHeader title="Evaluation team" sub="Assign internal stakeholders and specify their access permissions." inline />
+        <StepHeader title="Stakeholders" sub="Assign internal stakeholders and specify their access permissions." inline />
       </div>
       
       <div className="space-y-4 mb-4">
         {wiz.evaluators.length === 0 && (
-          <Card><NotApplicable>No evaluators added yet.</NotApplicable></Card>
+          <Card><NotApplicable>No stakeholders added yet.</NotApplicable></Card>
         )}
         {wiz.evaluators.map((ev, i) => (
           <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-5 relative shadow-sm">
@@ -1361,12 +1360,12 @@ function StepEvaluators({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch
       
       <div className="mb-4">
         <button onClick={addEvaluator} className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-700 hover:text-slate-900 transition-colors px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
-          <Plus size={14} /> Add evaluator
+          <Plus size={14} /> Add stakeholder
         </button>
       </div>
 
       <InfoBox variant="blue">
-        Evaluators will receive an email invitation to access the scoring panel once the event moves to the "Under Evaluation" stage.
+        Stakeholders will receive an email invitation to access the scoring panel once the event moves to the "Under Evaluation" stage.
       </InfoBox>
     </div>
   );
@@ -1396,7 +1395,7 @@ function Step5({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
-        <StepHeader title="Participants" sub="Invite suppliers — they'll be notified when the event is published." inline />
+        <StepHeader title="Suppliers" sub="Invite suppliers — they'll be notified when the event is published." inline />
         <button onClick={() => setWiz(w => ({ ...w, _inviteOpen: true, _inviteSearch: "", _inviteSelected: [] }))} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-2 rounded-xl hover:bg-primary/80 transition-colors flex-shrink-0">
           <Plus size={13} /> Invite suppliers
         </button>
@@ -1564,9 +1563,9 @@ function Step7({ wiz }: { wiz: WizState }) {
     { ok: !!wiz.deadline,               label: wiz.deadline ? "Submission deadline set" : "Submission deadline not set" },
     {
       ok: wiz.type === "RFI" || wiz.type === "RFP" || wiz.items.length > 0,
-      label: wiz.type === "RFI" ? "Line items not required for RFI"
-           : wiz.type === "RFP" ? wiz.items.length > 0 ? `${wiz.items.length} deliverables added` : "Deliverables optional for RFP — none added"
-           : wiz.items.length > 0 ? `${wiz.items.length} BOQ line items added` : "BOQ is mandatory for RFQ — no items added",
+      label: wiz.type === "RFI" ? "Bid Matrix not required for RFI"
+           : wiz.type === "RFP" ? wiz.items.length > 0 ? `${wiz.items.length} bid matrix items added` : "Bid Matrix optional for RFP — none added"
+           : wiz.items.length > 0 ? `${wiz.items.length} bid matrix items added` : "Bid Matrix is mandatory for RFQ — no items added",
     },
     {
       ok: wiz.type !== "RFP" || scoredQ > 0,
@@ -1576,7 +1575,7 @@ function Step7({ wiz }: { wiz: WizState }) {
     },
     { ok: wiz.participants.length > 0,  label: wiz.participants.length > 0 ? `${wiz.participants.length} suppliers invited` : "No suppliers invited yet" },
     { ok: totalQ > 0,                   label: totalQ > 0 ? `${totalQ} total questions` : "No questionnaire sections added" },
-    ...(wiz.type === "RFP" ? [{ ok: wiz.evaluators.length > 0, label: wiz.evaluators.length > 0 ? `${wiz.evaluators.length} evaluator(s) assigned` : "No evaluators assigned yet" }] : []),
+    ...(wiz.type === "RFP" ? [{ ok: wiz.evaluators.length > 0, label: wiz.evaluators.length > 0 ? `${wiz.evaluators.length} stakeholder(s) assigned` : "No stakeholders assigned yet" }] : []),
     { ok: wiz.reminders.length > 0,     label: `${wiz.reminders.length} reminder(s) scheduled` },
   ];
   const allOk = checks.every(c => c.ok);
@@ -1588,14 +1587,14 @@ function Step7({ wiz }: { wiz: WizState }) {
     { label: "Deadline",      value: wiz.deadline ? new Date(wiz.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—" },
     ...(cfg.showPricing ? [{ label: "Est. value", value: "₹50,00,000" }] : []),
     ...(cfg.showPricing ? [{ label: "Bid validity", value: wiz.bidValidityDays ? `${wiz.bidValidityDays} days` : "—" }] : []),
-    { label: wiz.type === "RFQ" ? "BOQ items" : "Line items",
+    { label: "Bid Matrix items",
       value: cfg.showItems ? `${wiz.items.length} items${total > 0 ? ` / ₹${total.toLocaleString("en-IN")}` : ""}` : "N/A" },
     ...(wiz.type === "RFP" ? [{ label: "Award basis", value: "Weighted technical + commercial score" }] : []),
     ...(wiz.type === "RFQ" ? [{ label: "Award basis", value: "L1 — lowest qualified bid" }] : []),
     { label: "Suppliers",     value: `${wiz.participants.length} invited` },
     { label: "Questionnaire", value: `${totalQ} questions, ${wiz.sections.length} sections` },
     ...(wiz.type === "RFP" ? [{ label: "Scored questions", value: `${scoredQ} (${totalWeight}% total weight)` }] : []),
-    ...(wiz.type === "RFP" ? [{ label: "Evaluators", value: `${wiz.evaluators.length} assigned` }] : []),
+    ...(wiz.type === "RFP" ? [{ label: "Stakeholders", value: `${wiz.evaluators.length} assigned` }] : []),
     { label: "Two-envelope",  value: wiz.toggles.two_envelope_system ? "Yes" : "No" },
     { label: "Reminders",     value: `${wiz.reminders.length} scheduled` },
   ];

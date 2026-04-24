@@ -690,7 +690,7 @@ export const TYPE_CONFIG: Record<string, {
 }> = {
   RFI: {
     color: "#6366f1", bg: "#eef2ff", name: "Request for Information", tagline: "Market research – no pricing collected",
-    steps: ["Event type", "Basic details", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
+    steps: ["Event type", "Basic details", "Documents", "Questionnaire", "Suppliers", "Reminders", "Review"],
     stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Specs & NDA", "Qualification questions", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: false, showPricing: false, showBidBond: false, showTwoEnvelope: false, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
     togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments"],
@@ -698,20 +698,20 @@ export const TYPE_CONFIG: Record<string, {
   },
   RFP: {
     color: "#0ea5e9", bg: "#e0f2fe", name: "Request for Proposal", tagline: "Proposals with pricing & methodology – weighted evaluation",
-    steps: ["Event type", "Basic details", "Deliverables", "Documents", "Questionnaire", "Evaluators", "Participants", "Reminders", "Review"],
+    steps: ["Event type", "Basic details", "Bid Matrix", "Documents", "Questionnaire", "Stakeholders", "Suppliers", "Reminders", "Review"],
     stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Optional deliverables & pricing", "Specs & T&Cs", "Evaluation criteria & questions", "Assign scoring team", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: true, showPricing: true, showBidBond: false, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: true,
-    itemsLabel: "Deliverables / scope items",
+    itemsLabel: "Bid Matrix",
     itemsNote: "Deliverables are optional for RFP. Add items to request line-level pricing from suppliers.",
     togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "site_visit_required", "price_negotiation_enabled"],
     infoBox: "RFP collects detailed proposals with pricing, methodology, and team qualifications. Award is based on weighted technical + commercial score.",
   },
   RFQ: {
     color: "#f59e0b", bg: "#fef3c7", name: "Request for Quotation", tagline: "Competitive price comparison – BOQ mandatory, L1 award",
-    steps: ["Event type", "Basic details", "Line items (BOQ)", "Documents", "Questionnaire", "Participants", "Reminders", "Review"],
+    steps: ["Event type", "Basic details", "Bid Matrix", "Documents", "Questionnaire", "Suppliers", "Reminders", "Review"],
     stepSubs: ["RFI / RFP / RFQ", "Title, dates, settings", "Mandatory BOQ — suppliers quote unit prices", "Specs & T&Cs", "Qualification questions (optional)", "Invite suppliers", "Schedule reminders", "Final check"],
     showItems: true, showPricing: true, showBidBond: true, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: false,
-    itemsLabel: "Line items / Bill of Quantities (BOQ)",
+    itemsLabel: "Bid Matrix",
     itemsNote: "BOQ is mandatory for RFQ. Suppliers must quote a unit price for every line item.",
     togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "bid_bond_required", "site_visit_required"],
     infoBox: "RFQ requires a complete BOQ. Suppliers submit sealed unit prices per line. Award goes to the L1 (lowest qualified bid). Price negotiation is not applicable.",
