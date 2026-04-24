@@ -25,7 +25,7 @@ interface ResponsesViewProps {
   onUpdateClarifications: (clarifications: Clarification[]) => void;
 }
 
-type RespTab = "responses" | "evaluation" | "financial" | "clarifications";
+type RespTab = "responses" | "evaluation" | "combined" | "financial" | "clarifications";
 type ClarifFilter = "ALL" | "PENDING" | "ANSWERED";
 type AppSubView = "list" | "eval" | "award";
 
@@ -96,10 +96,11 @@ export function ResponsesView({
 
   /* ── Main tabs view ─────────────────────────────────────────── */
   const allTabs: { key: RespTab; label: string; count: number; locked?: boolean; show: boolean }[] = [
-    { key: "responses",      label: "Supplier Responses",   count: responses.length, show: true },
-    { key: "evaluation",     label: "Evaluation & Scoring", count: qualified.length, show: hasEvaluation },
-    { key: "financial",      label: "Financial Envelopes",  count: qualified.filter(r => r.fin_env === "OPENED").length, locked: !finOpened, show: hasFinancial },
-    { key: "clarifications", label: "Q&A / Clarifications", count: clarifications.length, show: true },
+    { key: "responses",      label: "Supplier Responses",      count: responses.length, show: true },
+    { key: "evaluation",     label: "Evaluation & Scoring",    count: qualified.length, show: hasEvaluation },
+    { key: "combined",       label: "Combined Evaluation",     count: submitted.length, show: true },
+    { key: "financial",      label: "Financial Envelopes",     count: qualified.filter(r => r.fin_env === "OPENED").length, locked: !finOpened, show: hasFinancial },
+    { key: "clarifications", label: "Q&A / Clarifications",   count: clarifications.length, show: true },
   ];
   const tabs = allTabs.filter(t => t.show);
 
@@ -226,6 +227,9 @@ export function ResponsesView({
             <EvaluationTab responses={responses} qualified={qualified} minQual={minQual}
               onEval={r => { setEvalSupplier(r); setScores({}); setSubView("eval"); }}
               onOpenEnvelopes={handleOpenEnvelopes} />
+          )}
+          {validTab === "combined" && (
+            <CombinedEvaluationTab responses={submitted} criteria={criteria} minQual={minQual} isRFI={isRFI} />
           )}
           {validTab === "financial" && finOpened && (
             <FinancialTab qualified={qualified} event={event} onAward={(suppId) => { setAwardPreselect(suppId); setSubView("award"); }} />
@@ -586,6 +590,121 @@ function ClarificationsTab({ clarifications, filter, setFilter, clarifOpen, setC
         ))}
       </div>
     </>
+  );
+}
+
+/* ── Combined evaluation tab ────────────────────────────────────── */
+function CombinedEvaluationTab({ responses }: {
+  responses: SupplierResponse[]; criteria: EvalCriterion[]; minQual: number; isRFI: boolean;
+}) {
+  const submitted = responses.filter(r => r.status === "SUBMITTED" && r.answers.length > 0);
+
+  if (submitted.length === 0) {
+    return <p className="text-[13px] text-slate-400 text-center py-8">No responses received yet.</p>;
+  }
+
+  // Build ordered list of unique questions grouped by section from the first supplier
+  // (all suppliers answer the same questionnaire)
+  const reference = submitted[0].answers;
+  const sectionNames = Array.from(new Set(reference.map(a => a.section)));
+
+  function getAnswer(resp: SupplierResponse, question: string) {
+    return resp.answers.find(a => a.q === question);
+  }
+
+  const SECTION_HEADER_COLORS: Record<string, string> = {
+    "Technical Compliance": "bg-sky-700",
+    "Quality & Compliance": "bg-violet-700",
+    "Commercial Terms":     "bg-amber-700",
+    "Company Profile":      "bg-slate-600",
+  };
+  const SECTION_ROW_COLORS: Record<string, string> = {
+    "Technical Compliance": "bg-sky-50/40",
+    "Quality & Compliance": "bg-violet-50/40",
+    "Commercial Terms":     "bg-amber-50/40",
+    "Company Profile":      "bg-slate-50/40",
+  };
+
+  return (
+    <div>
+      <InfoBox variant="blue">
+        Side-by-side comparison of all submitted supplier answers for each question. Withdrawn or empty responses are excluded.
+      </InfoBox>
+      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full text-[12px] border-collapse">
+          <thead>
+            <tr className="bg-slate-800 text-white">
+              <th className="sticky left-0 z-10 bg-slate-800 text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider min-w-[240px] border-r border-slate-700">
+                Question
+              </th>
+              {submitted.map(r => (
+                <th key={r.id} className="px-4 py-3 text-left text-[11px] font-semibold border-l border-slate-700 min-w-[200px]">
+                  <div className="font-bold">{r.supplier}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-slate-400 font-normal text-[10px]">{r.country}</span>
+                    {r.is_disqualified && (
+                      <span className="text-[10px] bg-red-900/60 text-red-300 px-1.5 py-0.5 rounded-full font-medium">Disqualified</span>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sectionNames.map(secName => {
+              const questions = reference.filter(a => a.section === secName);
+              const headerBg = SECTION_HEADER_COLORS[secName] ?? "bg-slate-600";
+              const rowBg    = SECTION_ROW_COLORS[secName]    ?? "bg-white";
+              return (
+                <>
+                  <tr key={"sec-" + secName}>
+                    <td
+                      colSpan={submitted.length + 1}
+                      className={cn("px-4 py-2.5 text-[11px] font-bold text-white uppercase tracking-wider border-t-2 border-slate-200", headerBg)}
+                    >
+                      {secName}
+                    </td>
+                  </tr>
+                  {questions.map((refAns, qi) => (
+                    <tr key={secName + qi} className={cn("border-t border-slate-100 hover:brightness-95 transition-all", rowBg)}>
+                      {/* Question */}
+                      <td className={cn("sticky left-0 z-10 px-4 py-3 align-top border-r border-slate-200", rowBg)}>
+                        <div className="text-[12px] font-medium text-slate-800 leading-snug">{refAns.q}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wide">{refAns.type.replace("_", " ")}</div>
+                      </td>
+                      {/* Each supplier's answer */}
+                      {submitted.map(r => {
+                        const ans = getAnswer(r, refAns.q);
+                        const isEmpty = !ans?.val;
+                        return (
+                          <td key={r.id} className={cn(
+                            "px-4 py-3 border-l border-slate-100 align-top",
+                            r.is_disqualified && "opacity-60"
+                          )}>
+                            {ans?.type === "FILE_UPLOAD" ? (
+                              isEmpty
+                                ? <span className="text-[11px] text-red-400 italic">Not uploaded</span>
+                                : <span className="flex items-center gap-1 text-[12px] text-sky-600 font-medium">
+                                    <FileText size={11} className="flex-shrink-0" />
+                                    <span className="truncate max-w-[160px]">{ans.val}</span>
+                                  </span>
+                            ) : isEmpty ? (
+                              <span className="text-[11px] text-slate-300 italic">No answer</span>
+                            ) : (
+                              <span className="text-[12px] text-slate-800 leading-snug">{ans!.val}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
