@@ -1499,11 +1499,9 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   const [openId, setOpenId] = useState<number | null>(null);
 
   const RECIPIENTS = [
-    { key: "MANAGER",      label: "Manager" },
-    { key: "STAKEHOLDER",  label: "Stakeholder" },
-    { key: "SPECTATOR",    label: "Spectator" },
-    { key: "SPECTATOR_QA", label: "Spectator Q&A" },
-    { key: "SUPPLIER",     label: "Supplier" },
+    { key: "EVENT_MANAGER", label: "Event Manager" },
+    { key: "STAKEHOLDER",   label: "Stakeholder" },
+    { key: "SUPPLIER",      label: "Supplier" },
   ];
 
   const BLANK_REMINDER = (): WizReminder => ({
@@ -1716,7 +1714,7 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
               onChange={e => updateField(openReminder.id, "body", e.target.value)}
               placeholder="Email text"
               rows={4}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white resize-none"
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white resize-y min-h-[96px]"
             />
           </div>
 
@@ -1742,15 +1740,6 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 
           {/* Exclusions */}
           <div className="mb-5 space-y-2">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={openReminder.excl_sub}
-                onChange={e => updateField(openReminder.id, "excl_sub", e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 accent-primary"
-              />
-              <span className="text-[13px] text-slate-700">Exclude suppliers already logged in</span>
-            </label>
             <label className="flex items-center gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"
