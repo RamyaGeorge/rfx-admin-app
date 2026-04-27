@@ -31,6 +31,7 @@ export interface RFXEvent {
   deadline: string;
   responses: number;
   qualified: number;
+  category?: string;
 }
 
 export interface ActiveEvent {

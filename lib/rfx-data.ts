@@ -19,6 +19,7 @@ export const EVENTS_LIST: RFXEvent[] = [
     deadline: "30 Sep 2025",
     responses: 5,
     qualified: 3,
+    category: "Electrical & Instrumentation",
   },
   {
     id: 2,
@@ -29,6 +30,7 @@ export const EVENTS_LIST: RFXEvent[] = [
     deadline: "20 Oct 2025",
     responses: 2,
     qualified: 2,
+    category: "Facility Management",
   },
   {
     id: 3,
@@ -39,6 +41,7 @@ export const EVENTS_LIST: RFXEvent[] = [
     deadline: "15 Oct 2025",
     responses: 0,
     qualified: 0,
+    category: "Construction & Civil",
   },
   {
     id: 4,
@@ -49,6 +52,7 @@ export const EVENTS_LIST: RFXEvent[] = [
     deadline: "—",
     responses: 0,
     qualified: 0,
+    category: "IT & Software",
   },
   {
     id: 5,
@@ -59,6 +63,7 @@ export const EVENTS_LIST: RFXEvent[] = [
     deadline: "—",
     responses: 0,
     qualified: 0,
+    category: "Construction & Civil",
   },
 ];
 
