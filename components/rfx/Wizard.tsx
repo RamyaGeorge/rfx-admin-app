@@ -15,12 +15,185 @@ import {
   Check, ChevronLeft, ChevronRight, Plus, Search,
   GripVertical, X, CheckCircle2, FileSearch, LayoutList,
   ShoppingCart, ArrowLeft, Sparkles, Loader2, Pencil, Trash2, LayoutTemplate,
+  Bold, Italic, Underline, Strikethrough, List, ListOrdered,
+  IndentDecrease, IndentIncrease, AlignLeft, AlignCenter, Baseline, RemoveFormatting,
+  Undo2, Redo2,
 } from "lucide-react";
 
 interface WizardProps {
   onNavigate: (view: AppView) => void;
   onPublish: (wiz: WizState) => void;
   template?: TemplateWizData;
+}
+
+/* ── Rich Text Editor ──────────────────────────────────────────────── */
+function RteButton({ onAction, title, active, children }: {
+  onAction: () => void; title: string; active?: boolean; children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={e => { e.preventDefault(); onAction(); }}
+      className={cn(
+        "inline-flex items-center justify-center w-7 h-7 rounded-md text-sm transition-colors",
+        "hover:bg-accent hover:text-accent-foreground",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+        active ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+        "[&_svg]:size-3.5"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RteDivider() {
+  return <div className="w-px h-4 bg-border mx-0.5 shrink-0" />;
+}
+
+const RTE_COLORS = [
+  ["#000000","#434343","#666666","#999999","#b7b7b7","#cccccc","#d9d9d9","#ffffff"],
+  ["#ff0000","#ff4500","#ff9900","#ffff00","#00ff00","#00ffff","#4a86e8","#9900ff"],
+  ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
+  ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
+  ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
+  ["#cc0000","#e69138","#f1c232","#6aa84f","#45818e","#3d85c8","#674ea7","#a61c00"],
+  ["#990000","#b45f06","#bf9000","#38761d","#134f5c","#1155cc","#351c75","#741b47"],
+  ["#660000","#783f04","#7f6000","#274e13","#0c343d","#1c4587","#20124d","#4c1130"],
+];
+
+function RichTextEditor({ defaultValue, placeholder }: { defaultValue?: string; placeholder?: string }) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [, forceUpdate] = useState(0);
+  const [colorOpen, setColorOpen] = useState(false);
+  const savedSelectionRef = useRef<Range | null>(null);
+  const colorPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editorRef.current && defaultValue) {
+      editorRef.current.innerHTML = defaultValue;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!colorOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (!colorPanelRef.current?.contains(e.target as Node)) setColorOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [colorOpen]);
+
+  function exec(cmd: string, value?: string) {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, value ?? undefined);
+    forceUpdate(n => n + 1);
+  }
+
+  function isActive(cmd: string) {
+    try { return document.queryCommandState(cmd); } catch { return false; }
+  }
+
+  function saveSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) savedSelectionRef.current = sel.getRangeAt(0).cloneRange();
+  }
+
+  function applyColor(hex: string) {
+    setColorOpen(false);
+    const sel = window.getSelection();
+    if (savedSelectionRef.current) {
+      sel?.removeAllRanges();
+      sel?.addRange(savedSelectionRef.current);
+    }
+    editorRef.current?.focus();
+    document.execCommand("foreColor", false, hex);
+    forceUpdate(n => n + 1);
+  }
+
+  return (
+    <div className="rounded-md border border-input bg-background shadow-xs focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 transition-all overflow-hidden">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-border bg-muted/40">
+        <RteButton onAction={() => exec("undo")} title="Undo"><Undo2 /></RteButton>
+        <RteButton onAction={() => exec("redo")} title="Redo"><Redo2 /></RteButton>
+        <RteDivider />
+        <RteButton onAction={() => exec("bold")} title="Bold" active={isActive("bold")}><Bold /></RteButton>
+        <RteButton onAction={() => exec("italic")} title="Italic" active={isActive("italic")}><Italic /></RteButton>
+        <RteButton onAction={() => exec("underline")} title="Underline" active={isActive("underline")}><Underline /></RteButton>
+        <RteButton onAction={() => exec("strikeThrough")} title="Strikethrough" active={isActive("strikeThrough")}><Strikethrough /></RteButton>
+        <RteDivider />
+        <RteButton onAction={() => exec("insertOrderedList")} title="Numbered list" active={isActive("insertOrderedList")}><ListOrdered /></RteButton>
+        <RteButton onAction={() => exec("insertUnorderedList")} title="Bullet list" active={isActive("insertUnorderedList")}><List /></RteButton>
+        <RteButton onAction={() => exec("outdent")} title="Outdent"><IndentDecrease /></RteButton>
+        <RteButton onAction={() => exec("indent")} title="Indent"><IndentIncrease /></RteButton>
+        <RteDivider />
+        <RteButton onAction={() => exec("justifyLeft")} title="Align left" active={isActive("justifyLeft")}><AlignLeft /></RteButton>
+        <RteButton onAction={() => exec("justifyCenter")} title="Align center" active={isActive("justifyCenter")}><AlignCenter /></RteButton>
+        <RteDivider />
+
+        {/* Color picker button */}
+        <div className="relative">
+          <button
+            type="button"
+            title="Text color"
+            onMouseDown={e => {
+              e.preventDefault();
+              saveSelection();
+              setColorOpen(o => !o);
+            }}
+            className={cn(
+              "inline-flex items-center justify-center w-7 h-7 rounded-md text-sm transition-colors",
+              "hover:bg-accent hover:text-accent-foreground text-muted-foreground [&_svg]:size-3.5",
+              colorOpen && "bg-accent text-accent-foreground"
+            )}
+          >
+            <Baseline />
+          </button>
+          {colorOpen && (
+            <div
+              ref={colorPanelRef}
+              className="absolute left-0 top-8 z-50 p-2 bg-popover border border-border rounded-lg shadow-lg"
+            >
+              {RTE_COLORS.map((row, ri) => (
+                <div key={ri} className="flex gap-1 mb-1 last:mb-0">
+                  {row.map(hex => (
+                    <button
+                      key={hex}
+                      type="button"
+                      title={hex}
+                      onMouseDown={e => { e.preventDefault(); applyColor(hex); }}
+                      className="w-5 h-5 rounded-sm border border-black/10 hover:scale-110 transition-transform flex-shrink-0"
+                      style={{ backgroundColor: hex }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <RteButton onAction={() => exec("removeFormat")} title="Clear formatting"><RemoveFormatting /></RteButton>
+      </div>
+      {/* Content area */}
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onInput={() => forceUpdate(n => n + 1)}
+        className={cn(
+          "min-h-[96px] max-h-64 overflow-y-auto px-3 py-2.5",
+          "text-sm text-foreground leading-relaxed focus:outline-none",
+          "[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-muted-foreground",
+          "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
+          "[&_b]:font-semibold [&_strong]:font-semibold"
+        )}
+      />
+    </div>
+  );
 }
 
 const QTYPES = ["TEXT", "NUMERIC", "BOOLEAN", "SINGLE_CHOICE", "MULTI_CHOICE", "FILE_UPLOAD", "DATE"];
@@ -530,10 +703,9 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         </div>
         <div className="mt-3">
           <Field label="Description / scope summary">
-            <Textarea
+            <RichTextEditor
               defaultValue={fromTemplate ? "" : "Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."}
               placeholder={fromTemplate ? "Enter a description or scope summary…" : ""}
-              className="min-h-[72px] resize-none"
             />
           </Field>
         </div>
