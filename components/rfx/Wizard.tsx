@@ -17,7 +17,7 @@ import {
   ShoppingCart, ArrowLeft, Sparkles, Loader2, Pencil, Trash2, LayoutTemplate,
   Bold, Italic, Underline, Strikethrough, List, ListOrdered,
   IndentDecrease, IndentIncrease, AlignLeft, AlignCenter, Baseline, RemoveFormatting,
-  Undo2, Redo2,
+  Undo2, Redo2, Link as LinkIcon,
 } from "lucide-react";
 
 interface WizardProps {
@@ -192,6 +192,78 @@ function RichTextEditor({ defaultValue, placeholder }: { defaultValue?: string; 
           "[&_b]:font-semibold [&_strong]:font-semibold"
         )}
       />
+    </div>
+  );
+}
+
+/* ── Multi-link field ──────────────────────────────────────────────── */
+function isValidUrl(val: string) {
+  try { return Boolean(new URL(val)); } catch { return false; }
+}
+
+function LinkListField({ links, onChange }: { links: string[]; onChange: (links: string[]) => void }) {
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+
+  function add() {
+    const url = draft.trim();
+    if (!url) return;
+    if (!isValidUrl(url)) { setError("Please enter a valid URL (e.g. https://example.com)"); return; }
+    onChange([...links, url]);
+    setDraft("");
+    setError("");
+  }
+
+  function remove(i: number) {
+    onChange(links.filter((_, idx) => idx !== i));
+  }
+
+  function handleKey(e: React.KeyboardEvent) {
+    if (e.key === "Enter") { e.preventDefault(); add(); }
+  }
+
+  return (
+    <div className="space-y-2">
+      {links.map((url, i) => (
+        <div key={i} className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 group">
+          <LinkIcon size={13} className="text-slate-400 flex-shrink-0" />
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-[13px] text-primary truncate hover:underline"
+          >
+            {url}
+          </a>
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            className="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <Input
+            type="url"
+            placeholder="https://…"
+            value={draft}
+            onChange={e => { setDraft(e.target.value); if (error) setError(""); }}
+            onKeyDown={handleKey}
+            className={cn("flex-1", error && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
+          />
+          <button
+            type="button"
+            onClick={add}
+            className="flex items-center gap-1 px-3 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors flex-shrink-0"
+          >
+            <Plus size={13} /> Add
+          </button>
+        </div>
+        {error && <p className="text-[11px] text-red-500">{error}</p>}
+      </div>
     </div>
   );
 }
@@ -722,6 +794,25 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
             <RichTextEditor
               defaultValue={fromTemplate ? "" : "Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."}
               placeholder={fromTemplate ? "Enter a description or scope summary…" : ""}
+            />
+          </Field>
+        </div>
+        <div className="mt-3">
+          <Field label="Links">
+            <LinkListField
+              links={wiz.links ?? []}
+              onChange={links => setWiz(w => ({ ...w, links }))}
+            />
+          </Field>
+        </div>
+        <div className="mt-3">
+          <Field label="Comments">
+            <textarea
+              rows={3}
+              placeholder="Add any internal comments or notes…"
+              value={wiz.comments ?? ""}
+              onChange={e => setWiz(w => ({ ...w, comments: e.target.value }))}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white resize-y min-h-[72px]"
             />
           </Field>
         </div>

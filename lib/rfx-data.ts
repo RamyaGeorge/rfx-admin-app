@@ -479,6 +479,8 @@ export const DEFAULT_WIZ_STATE: WizState = {
   format: "LIST",
   category: "",
   eventManager: "",
+  links: [],
+  comments: "",
   toggles: {
     nda_required: true,
     intent_to_participate_req: true,

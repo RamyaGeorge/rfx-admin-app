@@ -196,6 +196,8 @@ export interface WizState {
   _inviteSelected?: string[];
   _templateName?: string;
   eventManager?: string;
+  links?: string[];
+  comments?: string;
   deadline?: string;
   siteVisitDate?: string;
   siteVisitLocation?: string;
