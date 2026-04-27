@@ -478,6 +478,7 @@ export const DEFAULT_WIZ_STATE: WizState = {
   type: "RFP",
   format: "LIST",
   category: "",
+  eventManager: "",
   toggles: {
     nda_required: true,
     intent_to_participate_req: true,

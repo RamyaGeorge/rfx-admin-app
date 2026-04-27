@@ -702,6 +702,22 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           </Field>
         </div>
         <div className="mt-3">
+          <Field label="Event manager">
+            <select
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+              value={wiz.eventManager ?? ""}
+              onChange={e => setWiz(w => ({ ...w, eventManager: e.target.value }))}
+            >
+              <option value="">Select team member…</option>
+              <option value="Priya Sharma">Priya Sharma</option>
+              <option value="Rahul Verma">Rahul Verma</option>
+              <option value="Sam Rayburn">Sam Rayburn</option>
+              <option value="Amit Patel">Amit Patel</option>
+              <option value="Neha Gupta">Neha Gupta</option>
+            </select>
+          </Field>
+        </div>
+        <div className="mt-3">
           <Field label="Description / scope summary">
             <RichTextEditor
               defaultValue={fromTemplate ? "" : "Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."}
