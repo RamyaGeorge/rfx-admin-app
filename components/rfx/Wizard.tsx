@@ -527,6 +527,9 @@ function initFromTemplate(t: TemplateWizData): WizState {
     taxInclusive: undefined,
     siteVisitDate: "",
     siteVisitLocation: "",
+    deliveryTerms: "",
+    deliveryAddress: "",
+    paymentTerms: "",
     sections: t.sections.map(s => ({ ...s, questions: s.questions.map(q => ({ ...q })) })),
     items: [],
     participants: [],
@@ -927,6 +930,62 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                   onChange={e => setWiz(w => ({ ...w, bidValidityDays: parseInt(e.target.value) || undefined }))}
                 />
                 <p className="text-[11px] text-slate-400 mt-1">Number of days suppliers must hold their quoted price.</p>
+              </Field>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {wiz.type !== "RFI" && (
+        <>
+          <SectionDivider>Commercial terms</SectionDivider>
+          <Card>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Delivery terms">
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+                  value={wiz.deliveryTerms ?? ""}
+                  onChange={e => setWiz(w => ({ ...w, deliveryTerms: e.target.value }))}
+                >
+                  <option value="">Select delivery terms…</option>
+                  <option>EXW – Ex Works</option>
+                  <option>FCA – Free Carrier</option>
+                  <option>CPT – Carriage Paid To</option>
+                  <option>CIP – Carriage and Insurance Paid To</option>
+                  <option>DAP – Delivered at Place</option>
+                  <option>DDP – Delivered Duty Paid</option>
+                  <option>FOB – Free on Board</option>
+                  <option>CIF – Cost, Insurance and Freight</option>
+                  <option>Door delivery</option>
+                </select>
+              </Field>
+              <Field label="Payment terms">
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+                  value={wiz.paymentTerms ?? ""}
+                  onChange={e => setWiz(w => ({ ...w, paymentTerms: e.target.value }))}
+                >
+                  <option value="">Select payment terms…</option>
+                  <option>Advance payment</option>
+                  <option>Net 30</option>
+                  <option>Net 45</option>
+                  <option>Net 60</option>
+                  <option>Net 90</option>
+                  <option>50% advance, 50% on delivery</option>
+                  <option>Letter of credit (LC)</option>
+                  <option>Against delivery</option>
+                </select>
+              </Field>
+            </div>
+            <div className="mt-3">
+              <Field label="Delivery address">
+                <textarea
+                  rows={2}
+                  placeholder="Enter the delivery / consignment address…"
+                  value={wiz.deliveryAddress ?? ""}
+                  onChange={e => setWiz(w => ({ ...w, deliveryAddress: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white resize-y min-h-[56px]"
+                />
               </Field>
             </div>
           </Card>
@@ -2109,6 +2168,9 @@ function Step7({ wiz }: { wiz: WizState }) {
       value: cfg.showItems ? `${wiz.items.length} items${total > 0 ? ` / ₹${total.toLocaleString("en-IN")}` : ""}` : "N/A" },
     ...(wiz.type === "RFP" ? [{ label: "Award basis", value: "Weighted technical + commercial score" }] : []),
     ...(wiz.type === "RFQ" ? [{ label: "Award basis", value: "L1 — lowest qualified bid" }] : []),
+    ...(wiz.type !== "RFI" ? [{ label: "Delivery terms", value: wiz.deliveryTerms || "—" }] : []),
+    ...(wiz.type !== "RFI" ? [{ label: "Payment terms",  value: wiz.paymentTerms  || "—" }] : []),
+    ...(wiz.type !== "RFI" ? [{ label: "Delivery address", value: wiz.deliveryAddress || "—" }] : []),
     { label: "Suppliers",     value: `${wiz.participants.length} invited` },
     { label: "Questionnaire", value: `${totalQ} questions, ${wiz.sections.length} sections` },
     ...(wiz.type === "RFP" ? [{ label: "Scored questions", value: `${scoredQ} (${totalWeight}% total weight)` }] : []),

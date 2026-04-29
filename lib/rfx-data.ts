@@ -538,6 +538,9 @@ export const DEFAULT_WIZ_STATE: WizState = {
   taxInclusive: false,
   siteVisitDate: "",
   siteVisitLocation: "",
+  deliveryTerms: "",
+  deliveryAddress: "",
+  paymentTerms: "",
 };
 
 export interface TemplateWizData {

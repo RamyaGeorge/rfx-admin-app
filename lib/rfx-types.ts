@@ -206,6 +206,9 @@ export interface WizState {
   commercialWeight?: number;
   taxInclusive?: boolean;
   bidValidityDays?: number;
+  deliveryTerms?: string;
+  deliveryAddress?: string;
+  paymentTerms?: string;
 }
 
 export interface ScoreEntry {
