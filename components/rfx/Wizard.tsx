@@ -26,6 +26,117 @@ interface WizardProps {
   template?: TemplateWizData;
 }
 
+/* ── Searchable Select ─────────────────────────────────────────────── */
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Search…",
+  className,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  placeholder?: string;
+  className?: string;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const filtered = options.filter(o =>
+    o.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function select(opt: string) {
+    onChange(opt);
+    setOpen(false);
+    setQuery("");
+  }
+
+  function clear(e: React.MouseEvent) {
+    e.stopPropagation();
+    onChange("");
+    setQuery("");
+  }
+
+  return (
+    <div ref={containerRef} className={cn("relative", className)}>
+      {/* Trigger */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "flex items-center w-full px-3 py-2 border rounded-lg text-[13px] bg-white cursor-pointer transition-all",
+          open ? "border-primary ring-1 ring-primary/20" : "border-slate-200 hover:border-slate-300"
+        )}
+      >
+        {open ? (
+          <input
+            autoFocus
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onClick={e => e.stopPropagation()}
+            placeholder={value || placeholder}
+            className="flex-1 outline-none text-[13px] text-slate-800 placeholder:text-slate-400 bg-transparent"
+          />
+        ) : (
+          <span className={cn("flex-1 truncate", value ? "text-slate-800" : "text-slate-400")}>
+            {value || placeholder}
+          </span>
+        )}
+        <div className="flex items-center gap-1 ml-1 flex-shrink-0">
+          {value && !open && (
+            <button
+              onClick={clear}
+              className="w-4 h-4 flex items-center justify-center rounded-full text-slate-300 hover:text-slate-500 transition-colors"
+            >
+              <X size={11} />
+            </button>
+          )}
+          <Search size={13} className="text-slate-300" />
+        </div>
+      </div>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="max-h-52 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-3 text-[12px] text-slate-400 text-center">No matches found</div>
+            ) : (
+              filtered.map(opt => (
+                <button
+                  key={opt}
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => select(opt)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 text-[13px] hover:bg-primary/5 transition-colors",
+                    value === opt ? "bg-primary/10 text-primary font-medium" : "text-slate-700"
+                  )}
+                >
+                  {opt}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Rich Text Editor ──────────────────────────────────────────────── */
 function RteButton({ onAction, title, active, children }: {
   onAction: () => void; title: string; active?: boolean; children: React.ReactNode;
@@ -773,16 +884,12 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
             <Input readOnly value={`${wiz.type}-2026-0019`} className="bg-slate-50 text-slate-400" />
           </Field>
           <Field label="Category">
-            <select
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
-              value={wiz.category}
-              onChange={e => setWiz(w => ({ ...w, category: e.target.value }))}
-            >
-              <option value="">Select category…</option>
-              {PROCUREMENT_CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={wiz.category ?? ""}
+              onChange={cat => setWiz(w => ({ ...w, category: cat }))}
+              options={PROCUREMENT_CATEGORIES}
+              placeholder="Select category…"
+            />
           </Field>
         </div>
         <div className="mt-3">
