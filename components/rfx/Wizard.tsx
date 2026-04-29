@@ -894,18 +894,12 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         </div>
         <div className="mt-3">
           <Field label="Event manager">
-            <select
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+            <SearchableSelect
               value={wiz.eventManager ?? ""}
-              onChange={e => setWiz(w => ({ ...w, eventManager: e.target.value }))}
-            >
-              <option value="">Select team member…</option>
-              <option value="Priya Sharma">Priya Sharma</option>
-              <option value="Rahul Verma">Rahul Verma</option>
-              <option value="Sam Rayburn">Sam Rayburn</option>
-              <option value="Amit Patel">Amit Patel</option>
-              <option value="Neha Gupta">Neha Gupta</option>
-            </select>
+              onChange={mgr => setWiz(w => ({ ...w, eventManager: mgr }))}
+              options={["Priya Sharma", "Rahul Verma", "Sam Rayburn", "Amit Patel", "Neha Gupta"]}
+              placeholder="Select team member…"
+            />
           </Field>
         </div>
         <div className="mt-3">
@@ -1049,39 +1043,39 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           <Card>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Delivery terms">
-                <select
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+                <SearchableSelect
                   value={wiz.deliveryTerms ?? ""}
-                  onChange={e => setWiz(w => ({ ...w, deliveryTerms: e.target.value }))}
-                >
-                  <option value="">Select delivery terms…</option>
-                  <option>EXW – Ex Works</option>
-                  <option>FCA – Free Carrier</option>
-                  <option>CPT – Carriage Paid To</option>
-                  <option>CIP – Carriage and Insurance Paid To</option>
-                  <option>DAP – Delivered at Place</option>
-                  <option>DDP – Delivered Duty Paid</option>
-                  <option>FOB – Free on Board</option>
-                  <option>CIF – Cost, Insurance and Freight</option>
-                  <option>Door delivery</option>
-                </select>
+                  onChange={val => setWiz(w => ({ ...w, deliveryTerms: val }))}
+                  options={[
+                    "EXW – Ex Works",
+                    "FCA – Free Carrier",
+                    "CPT – Carriage Paid To",
+                    "CIP – Carriage and Insurance Paid To",
+                    "DAP – Delivered at Place",
+                    "DDP – Delivered Duty Paid",
+                    "FOB – Free on Board",
+                    "CIF – Cost, Insurance and Freight",
+                    "Door delivery",
+                  ]}
+                  placeholder="Select delivery terms…"
+                />
               </Field>
               <Field label="Payment terms">
-                <select
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400"
+                <SearchableSelect
                   value={wiz.paymentTerms ?? ""}
-                  onChange={e => setWiz(w => ({ ...w, paymentTerms: e.target.value }))}
-                >
-                  <option value="">Select payment terms…</option>
-                  <option>Advance payment</option>
-                  <option>Net 30</option>
-                  <option>Net 45</option>
-                  <option>Net 60</option>
-                  <option>Net 90</option>
-                  <option>50% advance, 50% on delivery</option>
-                  <option>Letter of credit (LC)</option>
-                  <option>Against delivery</option>
-                </select>
+                  onChange={val => setWiz(w => ({ ...w, paymentTerms: val }))}
+                  options={[
+                    "Advance payment",
+                    "Net 30",
+                    "Net 45",
+                    "Net 60",
+                    "Net 90",
+                    "50% advance, 50% on delivery",
+                    "Letter of credit (LC)",
+                    "Against delivery",
+                  ]}
+                  placeholder="Select payment terms…"
+                />
               </Field>
             </div>
             <div className="mt-3">
@@ -1742,18 +1736,12 @@ function StepEvaluators({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch
             </button>
             <div className="mb-5 pr-10">
               <label className="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Name</label>
-              <select
+              <SearchableSelect
                 value={ev.name}
-                onChange={e => updateEvaluator(i, "name", e.target.value)}
-                className="w-full h-9 px-3 border border-slate-200 rounded-lg text-[13px] bg-white text-slate-700 focus:outline-none focus:border-slate-400"
-              >
-                <option value="">Select team member…</option>
-                <option value="Priya Sharma">Priya Sharma</option>
-                <option value="Rahul Verma">Rahul Verma</option>
-                <option value="Sam Rayburn">Sam Rayburn</option>
-                <option value="Amit Patel">Amit Patel</option>
-                <option value="Neha Gupta">Neha Gupta</option>
-              </select>
+                onChange={val => updateEvaluator(i, "name", val)}
+                options={["Priya Sharma", "Rahul Verma", "Sam Rayburn", "Amit Patel", "Neha Gupta"]}
+                placeholder="Select team member…"
+              />
             </div>
 
             <div className="space-y-4">

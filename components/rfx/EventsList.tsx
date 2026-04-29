@@ -27,13 +27,18 @@ function DropdownFilter({ label, value, options, onChange, active }: {
 }) {
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [query, setQuery] = useState("");
   const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
       const target = e.target as Node;
-      if (!btnRef.current?.contains(target)) setOpen(false);
+      if (!btnRef.current?.contains(target) && !panelRef.current?.contains(target)) {
+        setOpen(false);
+        setQuery("");
+      }
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -42,9 +47,16 @@ function DropdownFilter({ label, value, options, onChange, active }: {
   function toggle() {
     if (!open) setRect(btnRef.current?.getBoundingClientRect() ?? null);
     setOpen(o => !o);
+    if (open) setQuery("");
   }
 
   const selected = options.find(o => o.key === value);
+
+  const [first, ...rest] = options;
+  const filtered = [
+    first,
+    ...rest.filter(o => o.label.toLowerCase().includes(query.toLowerCase())),
+  ];
 
   return (
     <>
@@ -61,13 +73,26 @@ function DropdownFilter({ label, value, options, onChange, active }: {
       </button>
       {open && rect && (
         <div
-          style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, minWidth: Math.max(rect.width, 190), zIndex: 9999 }}
-          className="bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-max max-w-[260px]"
+          ref={panelRef}
+          style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, minWidth: Math.max(rect.width, 200), zIndex: 9999 }}
+          className="bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-max max-w-[280px]"
         >
-          {options.map(o => (
+          <div className="px-2 pb-1 pt-0.5">
+            <div className="relative">
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                autoFocus
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search categories…"
+                className="w-full pl-7 pr-2 h-7 border border-slate-200 rounded-lg text-[12px] text-slate-700 placeholder:text-slate-400 bg-white focus:outline-none focus:border-primary transition-all"
+              />
+            </div>
+          </div>
+          {filtered.map(o => (
             <button
               key={o.key}
-              onMouseDown={e => { e.preventDefault(); onChange(o.key); setOpen(false); }}
+              onMouseDown={e => { e.preventDefault(); onChange(o.key); setOpen(false); setQuery(""); }}
               className={cn(
                 "w-full text-left px-3 py-2 text-[12px] transition-colors",
                 value === o.key ? "bg-primary/5 text-primary font-semibold" : "text-slate-700 hover:bg-slate-50"
@@ -76,6 +101,9 @@ function DropdownFilter({ label, value, options, onChange, active }: {
               {o.label}
             </button>
           ))}
+          {filtered.length === 1 && query && (
+            <p className="px-3 py-2 text-[12px] text-slate-400">No categories found.</p>
+          )}
         </div>
       )}
     </>

@@ -1,16 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TypeBadge, StatusBadge, EnvelopeBadge, InfoBox, ScoreBar, StatCard } from "./shared";
 import type { ActiveEvent, RFXEvent, SupplierResponse, Clarification, EvalCriterion, AppView } from "@/lib/rfx-types";
 import {
   ChevronLeft, Unlock, Award, X, CheckCircle2,
-  FileText,
+  FileText, Search, ChevronDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+
+function SearchableEventSelect({ events, value, onChange }: {
+  events: RFXEvent[];
+  value: number;
+  onChange: (ev: RFXEvent) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = events.find(e => e.id === value);
+  const filtered = events.filter(e => e.title.toLowerCase().includes(query.toLowerCase()));
+
+  function select(ev: RFXEvent) {
+    onChange(ev);
+    setOpen(false);
+    setQuery("");
+  }
+
+  return (
+    <div ref={containerRef} className="relative w-full max-w-md">
+      <div
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "flex items-center w-full h-9 px-3 border rounded-lg text-[13px] bg-white cursor-pointer transition-all",
+          open ? "border-primary ring-1 ring-primary/20" : "border-slate-200 hover:border-slate-300"
+        )}
+      >
+        {open ? (
+          <input
+            autoFocus
+            value={query}
+            onChange={e => { e.stopPropagation(); setQuery(e.target.value); }}
+            onClick={e => e.stopPropagation()}
+            placeholder="Search events…"
+            className="flex-1 outline-none text-[13px] text-slate-700 placeholder:text-slate-400 bg-transparent"
+          />
+        ) : (
+          <span className="flex-1 truncate text-slate-700">{selected?.title ?? "Select event…"}</span>
+        )}
+        <ChevronDown size={13} className={cn("ml-2 flex-shrink-0 text-slate-400 transition-transform", open && "rotate-180")} />
+      </div>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 max-h-60 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-[12px] text-slate-400">No events found.</p>
+          ) : (
+            filtered.map(ev => (
+              <button
+                key={ev.id}
+                onMouseDown={e => { e.preventDefault(); select(ev); }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-[13px] transition-colors",
+                  ev.id === value ? "bg-primary/5 text-primary font-semibold" : "text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {ev.title}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface ResponsesViewProps {
   event: ActiveEvent;
@@ -112,20 +189,11 @@ export function ResponsesView({
       {/* Event selector */}
       <div className="mb-5">
         <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1.5 block">Select Event</label>
-        <select
+        <SearchableEventSelect
+          events={events}
           value={event.id}
-          onChange={e => {
-            const selected = events.find(ev => ev.id === Number(e.target.value));
-            if (selected) onSelectEvent(selected);
-          }}
-          className="w-full max-w-md h-9 rounded-lg border border-slate-200 bg-white px-3 text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
-        >
-          {events.map(ev => (
-            <option key={ev.id} value={ev.id}>
-              {ev.title}
-            </option>
-          ))}
-        </select>
+          onChange={onSelectEvent}
+        />
       </div>
 
       {/* Page header */}

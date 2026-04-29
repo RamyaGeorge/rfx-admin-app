@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -291,25 +291,12 @@ function CreateTemplateModal({ onClose, onSave, events }: {
               <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">
                 Based on event <span className="text-red-400">*</span>
               </label>
-              <div className="relative">
-                <select
-                  value={selectedEventId}
-                  onChange={e => { setSelectedEventId(e.target.value === "" ? "" : Number(e.target.value)); setEventError(""); }}
-                  className={cn(
-                    "w-full h-9 pl-3 pr-8 border rounded-lg text-[13px] bg-white appearance-none transition-colors",
-                    eventError ? "border-red-300" : "border-slate-200",
-                    selectedEventId === "" ? "text-slate-400" : "text-slate-800"
-                  )}
-                >
-                  <option value="">Select an event…</option>
-                  {events.map(ev => (
-                    <option key={ev.id} value={ev.id}>
-                      [{ev.type}] {ev.title} — {ev.number}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
+              <SearchableEventSelect
+                events={events}
+                value={selectedEventId}
+                onChange={id => { setSelectedEventId(id); setEventError(""); }}
+                hasError={!!eventError}
+              />
               {eventError && <p className="text-[11px] text-red-500 mt-1">{eventError}</p>}
 
               {selectedEvent && (
@@ -432,6 +419,91 @@ function CreateTemplateModal({ onClose, onSave, events }: {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Searchable event selector ──────────────────────────────────────────── */
+function SearchableEventSelect({ events, value, onChange, hasError }: {
+  events: RFXEvent[];
+  value: number | "";
+  onChange: (id: number | "") => void;
+  hasError?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = events.find(e => e.id === value);
+  const filtered = events.filter(e =>
+    `${e.type} ${e.title} ${e.number}`.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function select(ev: RFXEvent) {
+    onChange(ev.id);
+    setOpen(false);
+    setQuery("");
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "flex items-center w-full h-9 px-3 border rounded-lg text-[13px] bg-white cursor-pointer transition-all",
+          hasError ? "border-red-300" : open ? "border-primary ring-1 ring-primary/20" : "border-slate-200 hover:border-slate-300"
+        )}
+      >
+        {open ? (
+          <input
+            autoFocus
+            value={query}
+            onChange={e => { e.stopPropagation(); setQuery(e.target.value); }}
+            onClick={e => e.stopPropagation()}
+            placeholder="Search events…"
+            className="flex-1 outline-none text-[13px] text-slate-700 placeholder:text-slate-400 bg-transparent"
+          />
+        ) : (
+          <span className={cn("flex-1 truncate", selected ? "text-slate-800" : "text-slate-400")}>
+            {selected ? `[${selected.type}] ${selected.title} — ${selected.number}` : "Select an event…"}
+          </span>
+        )}
+        <ChevronDown size={13} className={cn("ml-2 flex-shrink-0 text-slate-400 transition-transform", open && "rotate-180")} />
+      </div>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 max-h-52 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-[12px] text-slate-400">No events found.</p>
+          ) : (
+            filtered.map(ev => (
+              <button
+                key={ev.id}
+                onMouseDown={e => { e.preventDefault(); select(ev); }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-[13px] transition-colors",
+                  ev.id === value ? "bg-primary/5 text-primary font-semibold" : "text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <span className="font-medium text-slate-500 mr-1">[{ev.type}]</span>
+                {ev.title}
+                <span className="text-slate-400 text-[12px] ml-1">— {ev.number}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
