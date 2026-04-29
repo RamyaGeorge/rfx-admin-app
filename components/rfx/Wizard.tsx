@@ -538,7 +538,16 @@ function initFromTemplate(t: TemplateWizData): WizState {
 
 export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
   const [wiz, setWiz] = useState<WizState>(() =>
-    template ? initFromTemplate(template) : { ...DEFAULT_WIZ_STATE, type: "RFP", format: "LIST" }
+    template ? initFromTemplate(template) : {
+      ...DEFAULT_WIZ_STATE,
+      type: "RFP",
+      format: "LIST",
+      items: [],
+      sections: [],
+      evaluators: [],
+      participants: [],
+      reminders: [],
+    }
   );
 
   const cfg = TYPE_CONFIG[wiz.type];
@@ -753,7 +762,7 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         <Field label="Event title" required>
           <Input
             placeholder="Enter event title…"
-            defaultValue={fromTemplate ? "" : "Annual Decorative Lighting Contract"}
+            defaultValue={fromTemplate ? wiz._templateName ?? "" : ""}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3 mt-3">
@@ -792,8 +801,8 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         <div className="mt-3">
           <Field label="Description / scope summary">
             <RichTextEditor
-              defaultValue={fromTemplate ? "" : "Supply and installation of decorative lighting for Phase 2 of the HQ renovation project."}
-              placeholder={fromTemplate ? "Enter a description or scope summary…" : ""}
+              defaultValue=""
+              placeholder="Enter a description or scope summary…"
             />
           </Field>
         </div>
