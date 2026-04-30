@@ -526,8 +526,8 @@ export const DEFAULT_WIZ_STATE: WizState = {
     { id: 4, name: "LightWave Solutions", country: "SG", status: "INVITED" },
   ],
   reminders: [
-    { id: 1, headline: "Submission Deadline – 48h remaining", scheduled: "2025-09-28T09:00", recipients: ["SUPPLIER"], sent: false, excl_sub: true, excl_finalised: false, include_link: true, repeat_enabled: false, repeat_days: "", repeat_hours: "", stop_after: "after", stop_repetitions: "1", subject: "Submission Deadline Reminder", body: "This is a reminder that the submission deadline is in 48 hours. Please ensure your response is complete." },
-    { id: 2, headline: "Clarification deadline tomorrow", scheduled: "2025-09-14T09:00", recipients: ["SUPPLIER", "MANAGER"], sent: true, excl_sub: false, excl_finalised: false, include_link: true, repeat_enabled: false, repeat_days: "", repeat_hours: "", stop_after: "after", stop_repetitions: "1", subject: "Clarification Deadline Tomorrow", body: "Please note that the clarification deadline is tomorrow. Submit any questions before close of business." },
+    { id: 1, headline: "Submission Deadline – 48h remaining", scheduled: "2025-09-28T09:00", recipients: ["SUPPLIER"], sent: false, excl_sub: true, excl_finalised: false, include_link: true, repeat_enabled: false, repeat_days: "", repeat_hours: "", stop_after: "after", stop_repetitions: "1", stop_date: "", subject: "Submission Deadline Reminder", body: "This is a reminder that the submission deadline is in 48 hours. Please ensure your response is complete." },
+    { id: 2, headline: "Clarification deadline tomorrow", scheduled: "2025-09-14T09:00", recipients: ["SUPPLIER", "MANAGER"], sent: true, excl_sub: false, excl_finalised: false, include_link: true, repeat_enabled: false, repeat_days: "", repeat_hours: "", stop_after: "after", stop_repetitions: "1", stop_date: "", subject: "Clarification Deadline Tomorrow", body: "Please note that the clarification deadline is tomorrow. Submit any questions before close of business." },
   ],
   _inviteOpen: false,
   _inviteSearch: "",
