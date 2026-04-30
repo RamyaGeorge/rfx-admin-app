@@ -588,9 +588,9 @@ export const TEMPLATE_WIZ_DATA: TemplateWizData[] = [
     category: "IT & Software",
     description: "Standard quotation template for annual IT hardware, peripherals and accessories refresh.",
     items: [
-      { id: 111, item_code: "IT-LAP-001", description: "Business Laptop 14\" Intel i7", quantity: "50", unit: "NOS", target_price: "75000.00", technical_spec: "i7-13th Gen, 16GB RAM, 512GB SSD", required_by: "2026-02-01" },
-      { id: 112, item_code: "IT-MON-002", description: "27\" 4K Monitor",              quantity: "60", unit: "NOS", target_price: "35000.00", technical_spec: "27\" 4K UHD IPS, USB-C",             required_by: "2026-02-01" },
-      { id: 113, item_code: "IT-DOK-003", description: "USB-C Docking Station",         quantity: "50", unit: "NOS", target_price: "12000.00", technical_spec: "Dual display, Ethernet, USB-A/C",    required_by: "2026-02-15" },
+      { id: 111, item_code: "IT-LAP-001", description: "Business Laptop 14\" Intel i7", quantity: "50", unit: "NOS", target_price: "75000.00", reserve_price: "", technical_spec: "i7-13th Gen, 16GB RAM, 512GB SSD", required_by: "2026-02-01" },
+      { id: 112, item_code: "IT-MON-002", description: "27\" 4K Monitor",              quantity: "60", unit: "NOS", target_price: "35000.00", reserve_price: "", technical_spec: "27\" 4K UHD IPS, USB-C",             required_by: "2026-02-01" },
+      { id: 113, item_code: "IT-DOK-003", description: "USB-C Docking Station",         quantity: "50", unit: "NOS", target_price: "12000.00", reserve_price: "", technical_spec: "Dual display, Ethernet, USB-A/C",    required_by: "2026-02-15" },
     ],
     sections: [
       { id: 211, title: "Technical Specifications", type: "TECHNICAL", mandatory: true, questions: [
@@ -614,8 +614,8 @@ export const TEMPLATE_WIZ_DATA: TemplateWizData[] = [
     category: "Facility Management",
     description: "Proposal request for office furniture covering design, supply and installation.",
     items: [
-      { id: 121, item_code: "FN-DSK-001", description: "Executive Workstation Desk",  quantity: "80",  unit: "NOS", target_price: "18000.00", technical_spec: "1800×900mm, pre-laminated board",  required_by: "2026-03-01" },
-      { id: 122, item_code: "FN-CHR-002", description: "Ergonomic Office Chair",       quantity: "100", unit: "NOS", target_price: "12000.00", technical_spec: "Mesh back, lumbar support, BIFMA", required_by: "2026-03-01" },
+      { id: 121, item_code: "FN-DSK-001", description: "Executive Workstation Desk",  quantity: "80",  unit: "NOS", target_price: "18000.00", reserve_price: "", technical_spec: "1800×900mm, pre-laminated board",  required_by: "2026-03-01" },
+      { id: 122, item_code: "FN-CHR-002", description: "Ergonomic Office Chair",       quantity: "100", unit: "NOS", target_price: "12000.00", reserve_price: "", technical_spec: "Mesh back, lumbar support, BIFMA", required_by: "2026-03-01" },
     ],
     sections: [
       { id: 221, title: "Design & Scope", type: "TECHNICAL", mandatory: true, questions: [
@@ -657,10 +657,10 @@ export const TEMPLATE_WIZ_DATA: TemplateWizData[] = [
     category: "Construction & Civil",
     description: "BOQ-based quotation for campus security infrastructure including CCTV and access control.",
     items: [
-      { id: 131, item_code: "SC-CAM-001", description: "IP Dome Camera 4MP",       quantity: "120", unit: "NOS", target_price: "8500.00",  technical_spec: "4MP, IR 30m, IP66, H.265",       required_by: "2026-02-15" },
-      { id: 132, item_code: "SC-NVR-002", description: "32-channel NVR",            quantity: "5",   unit: "NOS", target_price: "95000.00", technical_spec: "32ch, 4K decode, RAID",          required_by: "2026-02-15" },
-      { id: 133, item_code: "SC-ACC-003", description: "Access Control Reader",     quantity: "40",  unit: "NOS", target_price: "12000.00", technical_spec: "RFID + PIN, Wiegand, IP65",       required_by: "2026-03-01" },
-      { id: 134, item_code: "SC-CTR-004", description: "Access Control Controller", quantity: "10",  unit: "NOS", target_price: "25000.00", technical_spec: "4-door, TCP/IP, backup battery",  required_by: "2026-03-01" },
+      { id: 131, item_code: "SC-CAM-001", description: "IP Dome Camera 4MP",       quantity: "120", unit: "NOS", target_price: "8500.00",  reserve_price: "", technical_spec: "4MP, IR 30m, IP66, H.265",       required_by: "2026-02-15" },
+      { id: 132, item_code: "SC-NVR-002", description: "32-channel NVR",            quantity: "5",   unit: "NOS", target_price: "95000.00", reserve_price: "", technical_spec: "32ch, 4K decode, RAID",          required_by: "2026-02-15" },
+      { id: 133, item_code: "SC-ACC-003", description: "Access Control Reader",     quantity: "40",  unit: "NOS", target_price: "12000.00", reserve_price: "", technical_spec: "RFID + PIN, Wiegand, IP65",       required_by: "2026-03-01" },
+      { id: 134, item_code: "SC-CTR-004", description: "Access Control Controller", quantity: "10",  unit: "NOS", target_price: "25000.00", reserve_price: "", technical_spec: "4-door, TCP/IP, backup battery",  required_by: "2026-03-01" },
     ],
     sections: [
       { id: 241, title: "Technical Compliance", type: "TECHNICAL", mandatory: true, questions: [
