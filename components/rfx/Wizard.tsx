@@ -1295,6 +1295,13 @@ function QuestionRow({
   const selectedParent = eligibleParents.find(p => p.id === draft.conditionalOn?.questionId) ?? null;
   const answerOptions  = selectedParent ? getAnswerOptions(selectedParent) : [];
 
+  // Sum of scored weights for all other questions in this section (excluding self)
+  const otherSectionWeight = siblingQuestions
+    .filter(s => s.id !== q.id && s.scored)
+    .reduce((sum, s) => sum + (s.weight ?? 0), 0);
+
+  const sectionWeightExceeded = draft.scored && (otherSectionWeight + draft.weight) > 100;
+
   function handleParentChange(parentId: string) {
     if (!parentId) {
       setDraft(d => ({ ...d, conditionalOn: null }));
@@ -1304,6 +1311,7 @@ function QuestionRow({
   }
 
   function commitEdit() {
+    if (sectionWeightExceeded) return;
     onUpdate(si, qi, "text", draft.text);
     onUpdate(si, qi, "qtype", draft.qtype);
     onUpdate(si, qi, "mandatory", draft.mandatory);
@@ -1366,10 +1374,20 @@ function QuestionRow({
                   type="number" min="0" max="100"
                   value={draft.weight}
                   onChange={e => setDraft(d => ({ ...d, weight: parseInt(e.target.value) || 0 }))}
-                  className="w-24 text-[13px]"
+                  className={`w-24 text-[13px] ${sectionWeightExceeded ? "border-red-400 focus:border-red-400" : ""}`}
                 />
                 <span className="text-[12px] text-slate-400">% of section score</span>
               </div>
+              {sectionWeightExceeded && (
+                <p className="text-[11px] text-red-500 mt-1">
+                  Total section score exceeds 100% ({otherSectionWeight + draft.weight}%). Reduce the weight to {100 - otherSectionWeight}% or less.
+                </p>
+              )}
+              {!sectionWeightExceeded && (
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Section total: {otherSectionWeight + draft.weight}% / 100%
+                </p>
+              )}
             </div>
           )}
 
@@ -1418,7 +1436,7 @@ function QuestionRow({
           </div>
         </div>
         <div className="flex items-center gap-2 pt-1">
-          <button onClick={commitEdit} className="flex items-center gap-1.5 text-[12px] font-semibold bg-primary text-white px-3.5 py-1.5 rounded-lg hover:bg-primary/80 transition-colors">
+          <button onClick={commitEdit} disabled={sectionWeightExceeded} className={`flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-1.5 rounded-lg transition-colors ${sectionWeightExceeded ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80"}`}>
             <Check size={12} /> Save
           </button>
           <button onClick={discardEdit} className="text-[12px] text-slate-500 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -1616,6 +1634,14 @@ function Step4({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
               <Checkbox checked={sec.mandatory} onCheckedChange={v => updateSec(si, "mandatory", !!v)} /> Required
             </label>
             <div className="ml-auto flex items-center gap-2">
+              {(() => {
+                const secTotal = sec.questions.filter(q => q.scored).reduce((s, q) => s + (q.weight ?? 0), 0);
+                return secTotal > 0 ? (
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${secTotal > 100 ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"}`}>
+                    Score: {secTotal}%
+                  </span>
+                ) : null;
+              })()}
               <span className="text-[11px] text-slate-400">{sec.questions.length} question{sec.questions.length !== 1 ? "s" : ""}</span>
               <button
                 onClick={() => addQ(si)}

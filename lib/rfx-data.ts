@@ -493,7 +493,6 @@ export const DEFAULT_WIZ_STATE: WizState = {
     two_envelope_system: true,
     bid_bond_required: true,
     site_visit_required: false,
-    price_negotiation_enabled: false,
   },
   items: [
     { id: 1, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
