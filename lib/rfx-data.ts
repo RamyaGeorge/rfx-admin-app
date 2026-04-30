@@ -495,8 +495,8 @@ export const DEFAULT_WIZ_STATE: WizState = {
     site_visit_required: false,
   },
   items: [
-    { id: 1, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
-    { id: 2, item_code: "LT-LED-002", description: "LED Retrofit Bulb 10W E27", quantity: "2000", unit: "PCS", target_price: "180.00", technical_spec: "10W, E27 base, 4000K", required_by: "2026-01-20" },
+    { id: 1, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", reserve_price: "", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
+    { id: 2, item_code: "LT-LED-002", description: "LED Retrofit Bulb 10W E27", quantity: "2000", unit: "PCS", target_price: "180.00", reserve_price: "", technical_spec: "10W, E27 base, 4000K", required_by: "2026-01-20" },
   ],
   sections: [
     {
