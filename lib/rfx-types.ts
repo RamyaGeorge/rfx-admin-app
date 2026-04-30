@@ -132,6 +132,7 @@ export interface WizItem {
   quantity: string;
   unit: string;
   target_price: string;
+  reserve_price: string;
   technical_spec: string;
   required_by: string;
 }
@@ -167,6 +168,7 @@ export interface WizReminder {
   repeat_hours: string;
   stop_after: string;
   stop_repetitions: string;
+  stop_date: string;
   subject: string;
   body: string;
 }
@@ -178,7 +180,6 @@ export interface WizToggles {
   two_envelope_system: boolean;
   bid_bond_required: boolean;
   site_visit_required: boolean;
-  price_negotiation_enabled: boolean;
 }
 
 export interface WizState {

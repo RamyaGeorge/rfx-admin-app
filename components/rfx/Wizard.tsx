@@ -394,7 +394,6 @@ const TOGGLE_DEFS: Record<string, { label: string; sub: string }> = {
   two_envelope_system:        { label: "Two-envelope system",       sub: "Technical and financial bids are sealed separately and opened in sequence." },
   bid_bond_required:          { label: "Bid bond required",         sub: "Suppliers must submit a bid security / earnest money deposit." },
   site_visit_required:        { label: "Site visit required",       sub: "Suppliers must attend a mandatory site visit or pre-bid meeting." },
-  price_negotiation_enabled:  { label: "Enable price negotiation",  sub: "Buyers can negotiate pricing post-evaluation." },
 };
 
 const FORMAT_OPTIONS: Record<EventType, { value: EventFormat; label: string; desc: string }[]> = {
@@ -630,7 +629,6 @@ function initFromTemplate(t: TemplateWizData): WizState {
       two_envelope_system: false,
       bid_bond_required: false,
       site_visit_required: false,
-      price_negotiation_enabled: false,
     },
     techWeight: undefined,
     commercialWeight: undefined,
@@ -982,24 +980,12 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
         <>
           <SectionDivider>Evaluation methodology</SectionDivider>
           <Card>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Technical weight (%)">
+            <div className="grid grid-cols-1 gap-3">
+              <Field label="Qualified technical score (%)">
                 <Input type="number" value={wiz.techWeight ?? ""} onChange={e => {
                   const t = parseInt(e.target.value) || 0;
                   setWiz(w => ({ ...w, techWeight: t, commercialWeight: 100 - t }));
                 }} min={0} max={100} placeholder="e.g. 70" />
-                <p className="text-[11px] text-slate-400 mt-1">Remaining {wiz.commercialWeight ?? 0}% is commercial weight.</p>
-              </Field>
-              <Field label="Min. qualification score (%)">
-                <Input type="number" defaultValue={fromTemplate ? "" : "70"} placeholder={fromTemplate ? "e.g. 70" : ""} min={0} max={100} />
-                <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from commercial evaluation.</p>
-              </Field>
-              <Field label="Award basis">
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400">
-                  <option>Weighted score (technical + commercial)</option>
-                  <option>Lowest evaluated cost</option>
-                  <option>Best value for money</option>
-                </select>
               </Field>
             </div>
           </Card>
@@ -1008,16 +994,9 @@ function Step1({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 
       {wiz.type === "RFQ" && (
         <>
-          <SectionDivider>Award basis</SectionDivider>
+          <SectionDivider>Commercial terms</SectionDivider>
           <Card>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Award method">
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] text-slate-700 bg-white focus:outline-none focus:border-slate-400">
-                  <option>L1 — Lowest qualified bid</option>
-                  <option>L1 per lot</option>
-                  <option>L1 per line item (cherry pick)</option>
-                </select>
-              </Field>
               <Field label="Min. qualification score (%)">
                 <Input type="number" defaultValue={fromTemplate ? "" : "70"} placeholder={fromTemplate ? "e.g. 70" : ""} min={0} max={100} />
                 <p className="text-[11px] text-slate-400 mt-1">Suppliers below this score are excluded from price comparison.</p>
@@ -1163,7 +1142,7 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   }
 
   function addItem() {
-    setWiz(w => ({ ...w, items: [...w.items, { id: Date.now(), item_code: "", description: "", quantity: "1", unit: "PCS", target_price: "", technical_spec: "", required_by: "" }] }));
+    setWiz(w => ({ ...w, items: [...w.items, { id: Date.now(), item_code: "", description: "", quantity: "1", unit: "PCS", target_price: "", reserve_price: "", technical_spec: "", required_by: "" }] }));
   }
   function delItem(idx: number) {
     setWiz(w => ({ ...w, items: w.items.filter((_, i) => i !== idx) }));
@@ -1175,19 +1154,6 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
   return (
     <div>
       <StepHeader title={cfg.itemsLabel ?? "Line items"} sub={cfg.itemsNote ?? ""} />
-      {cfg.showPricing && (
-        <div className="mb-4 flex items-center justify-end">
-          <label className="text-[12px] text-slate-600 mr-2 font-medium">Pricing is:</label>
-          <select 
-            value={wiz.taxInclusive ? "inclusive" : "exclusive"}
-            onChange={e => setWiz(w => ({ ...w, taxInclusive: e.target.value === "inclusive" }))}
-            className="px-3 py-1.5 border border-slate-200 rounded-lg text-[12px] bg-white text-slate-700 focus:outline-none focus:border-slate-400"
-          >
-            <option value="exclusive">Exclusive of Taxes</option>
-            <option value="inclusive">Inclusive of Taxes</option>
-          </select>
-        </div>
-      )}
       {wiz.type === "RFQ" && wiz.items.length === 0 && (
         <div className="mb-4">
           <InfoBox variant="amber">
@@ -1207,7 +1173,7 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
-                {["Code", "Description", "Qty", "Unit", cfg.showPricing && "Target ₹", "Required by", ""].filter(Boolean).map(h => (
+                {["Name", "Description", "Qty", "Unit", cfg.showPricing && "Current Price", cfg.showPricing && "Reserve Price", "Required by", ""].filter(Boolean).map(h => (
                   <th key={h as string} className="text-left px-3 py-3 font-semibold text-slate-400 text-[11px] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -1215,7 +1181,7 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
             <tbody className="divide-y divide-slate-50">
               {wiz.items.map((it, i) => (
                 <tr key={it.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-2.5 py-2"><Input value={it.item_code} onChange={e => updateItem(i, "item_code", e.target.value)} className="h-8 text-[12px] w-24" placeholder="Code" /></td>
+                  <td className="px-2.5 py-2"><Input value={it.item_code} onChange={e => updateItem(i, "item_code", e.target.value)} className="h-8 text-[12px] w-24" placeholder="Name" /></td>
                   <td className="px-2.5 py-2"><Input value={it.description} onChange={e => updateItem(i, "description", e.target.value)} className="h-8 text-[12px]" placeholder="Description" /></td>
                   <td className="px-2.5 py-2"><Input value={it.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} className="h-8 text-[12px] w-16" type="number" /></td>
                   <td className="px-2.5 py-2">
@@ -1224,6 +1190,7 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                     </select>
                   </td>
                   {cfg.showPricing && <td className="px-2.5 py-2"><Input value={it.target_price} onChange={e => updateItem(i, "target_price", e.target.value)} className="h-8 text-[12px] w-24" placeholder="0.00" /></td>}
+                  {cfg.showPricing && <td className="px-2.5 py-2"><Input value={it.reserve_price} onChange={e => updateItem(i, "reserve_price", e.target.value)} className="h-8 text-[12px] w-24" placeholder="0.00" /></td>}
                   <td className="px-2.5 py-2"><DateTimePicker value={it.required_by} onChange={val => updateItem(i, "required_by", val)} className="h-8 text-[12px]" /></td>
                   <td className="px-2.5 py-2">
                     <button onClick={() => delItem(i)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-400 transition-all">
@@ -1387,7 +1354,7 @@ function QuestionRow({
               </label>
               <label className="flex items-center gap-2 text-[12px] text-slate-600 cursor-pointer">
                 <Checkbox checked={draft.scored} onCheckedChange={v => setDraft(d => ({ ...d, scored: !!v }))} />
-                Include in technical score
+                Include Score
               </label>
             </div>
           </div>
@@ -1960,6 +1927,7 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
     repeat_hours: "",
     stop_after: "after",
     stop_repetitions: "1",
+    stop_date: "",
     subject: "",
     body: "",
   });
@@ -2131,6 +2099,14 @@ function Step6({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
                     <span className="text-[12px] text-slate-500">repetitions</span>
                   </>
                 )}
+                {openReminder.stop_after === "on_date" && (
+                  <input
+                    type="date"
+                    value={openReminder.stop_date}
+                    onChange={e => updateField(openReminder.id, "stop_date", e.target.value)}
+                    className="h-8 px-2 border border-slate-200 rounded-lg text-[12px] bg-white focus:outline-none focus:border-primary"
+                  />
+                )}
               </div>
             )}
           </div>
@@ -2261,8 +2237,6 @@ function Step7({ wiz }: { wiz: WizState }) {
     ...(cfg.showPricing ? [{ label: "Bid validity", value: wiz.bidValidityDays ? `${wiz.bidValidityDays} days` : "—" }] : []),
     { label: "Bid Matrix items",
       value: cfg.showItems ? `${wiz.items.length} items${total > 0 ? ` / ₹${total.toLocaleString("en-IN")}` : ""}` : "N/A" },
-    ...(wiz.type === "RFP" ? [{ label: "Award basis", value: "Weighted technical + commercial score" }] : []),
-    ...(wiz.type === "RFQ" ? [{ label: "Award basis", value: "L1 — lowest qualified bid" }] : []),
     ...(wiz.type !== "RFI" ? [{ label: "Delivery terms", value: wiz.deliveryTerms || "—" }] : []),
     ...(wiz.type !== "RFI" ? [{ label: "Payment terms",  value: wiz.paymentTerms  || "—" }] : []),
     ...(wiz.type !== "RFI" ? [{ label: "Delivery address", value: wiz.deliveryAddress || "—" }] : []),

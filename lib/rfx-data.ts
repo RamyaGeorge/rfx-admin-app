@@ -714,7 +714,7 @@ export const TYPE_CONFIG: Record<string, {
     showItems: true, showPricing: true, showBidBond: false, showTwoEnvelope: true, showSiteVisit: false, showTechFields: false, showEvalCriteria: true,
     itemsLabel: "Bid Matrix",
     itemsNote: "Deliverables are optional for RFP. Add items to request line-level pricing from suppliers.",
-    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "site_visit_required", "price_negotiation_enabled"],
+    togglesToShow: ["nda_required", "intent_to_participate_req", "allow_supplier_attachments", "two_envelope_system", "site_visit_required"],
     infoBox: "RFP collects detailed proposals with pricing, methodology, and team qualifications. Award is based on weighted technical + commercial score.",
   },
   RFQ: {
