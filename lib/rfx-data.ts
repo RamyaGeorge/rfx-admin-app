@@ -558,9 +558,9 @@ export const TEMPLATE_WIZ_DATA: TemplateWizData[] = [
     category: "Electrical & Instrumentation",
     description: "BOQ-based quotation for decorative & industrial lighting procurement.",
     items: [
-      { id: 101, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
-      { id: 102, item_code: "LT-LED-002",   description: "LED Retrofit Bulb 10W E27", quantity: "2000", unit: "PCS", target_price: "180.00", technical_spec: "10W, E27 base, 4000K", required_by: "2026-01-20" },
-      { id: 103, item_code: "LT-PAN-003",   description: "LED Panel Light 600×600mm", quantity: "300", unit: "PCS", target_price: "2500.00", technical_spec: "40W, 4000K, IP20", required_by: "2026-01-25" },
+      { id: 101, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", reserve_price: "", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
+      { id: 102, item_code: "LT-LED-002",   description: "LED Retrofit Bulb 10W E27", quantity: "2000", unit: "PCS", target_price: "180.00", reserve_price: "", technical_spec: "10W, E27 base, 4000K", required_by: "2026-01-20" },
+      { id: 103, item_code: "LT-PAN-003",   description: "LED Panel Light 600×600mm", quantity: "300", unit: "PCS", target_price: "2500.00", reserve_price: "", technical_spec: "40W, 4000K, IP20", required_by: "2026-01-25" },
     ],
     sections: [
       { id: 201, title: "Technical Compliance", type: "TECHNICAL", mandatory: true, questions: [
