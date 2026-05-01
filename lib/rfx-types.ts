@@ -125,6 +125,17 @@ export interface WizSection {
   questions: WizQuestion[];
 }
 
+export type DocumentType = "TERMS_CONDITIONS" | "NDA" | "OTHER";
+
+export interface WizDocument {
+  id: number;
+  name: string;
+  docType: DocumentType;
+  description: string;
+  visibleToSupplier: boolean;
+  fileName: string;
+}
+
 export interface WizItem {
   id: number;
   item_code: string;
@@ -188,6 +199,7 @@ export interface WizState {
   format: EventFormat;
   category: string;
   toggles: WizToggles;
+  documents: WizDocument[];
   items: WizItem[];
   sections: WizSection[];
   evaluators: WizEvaluator[];

@@ -10,14 +10,14 @@ import { cn } from "@/lib/utils";
 import { InfoBox, ToggleRow, NotApplicable } from "./shared";
 import { SUPPLIER_CATALOGUE, TYPE_CONFIG, DEFAULT_WIZ_STATE } from "@/lib/rfx-data";
 import type { TemplateWizData } from "@/lib/rfx-data";
-import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView, WizEvaluator, WizReminder } from "@/lib/rfx-types";
+import type { WizState, WizItem, WizSection, WizQuestion, EventType, EventFormat, AppView, WizEvaluator, WizReminder, WizDocument, DocumentType } from "@/lib/rfx-types";
 import {
   Check, ChevronLeft, ChevronRight, Plus, Search,
   GripVertical, X, CheckCircle2, FileSearch, LayoutList,
   ShoppingCart, ArrowLeft, Sparkles, Loader2, Pencil, Trash2, LayoutTemplate,
   Bold, Italic, Underline, Strikethrough, List, ListOrdered,
   IndentDecrease, IndentIncrease, AlignLeft, AlignCenter, Baseline, RemoveFormatting,
-  Undo2, Redo2, Link as LinkIcon,
+  Undo2, Redo2, Link as LinkIcon, Download, FileText, Eye, EyeOff,
 } from "lucide-react";
 
 interface WizardProps {
@@ -640,6 +640,7 @@ function initFromTemplate(t: TemplateWizData): WizState {
     deliveryAddress: "",
     paymentTerms: "",
     sections: t.sections.map(s => ({ ...s, questions: s.questions.map(q => ({ ...q })) })),
+    documents: [],
     items: [],
     participants: [],
     reminders: [],
@@ -654,6 +655,7 @@ export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
       ...DEFAULT_WIZ_STATE,
       type: "RFP",
       format: "LIST",
+      documents: [],
       items: [],
       sections: [],
       evaluators: [],
@@ -671,7 +673,7 @@ export function Wizard({ onNavigate, onPublish, template }: WizardProps) {
     "Event type":    () => <Step0 wiz={wiz} setWiz={setWiz} />,
     "Basic details": () => <Step1 wiz={wiz} setWiz={setWiz} />,
     "Bid Matrix":    () => <Step2 wiz={wiz} setWiz={setWiz} />,
-    "Documents":     () => <Step3 wiz={wiz} />,
+    "Documents":     () => <Step3 wiz={wiz} setWiz={setWiz} />,
     "Questionnaire": () => <Step4 wiz={wiz} setWiz={setWiz} />,
     "Stakeholders":  () => <StepEvaluators wiz={wiz} setWiz={setWiz} />,
     "Suppliers":     () => <Step5 wiz={wiz} setWiz={setWiz} />,
@@ -1218,32 +1220,207 @@ function Step2({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.Se
 /* ════════════════════════════════════════════════════════════════════
    Step 3 — Documents
 ════════════════════════════════════════════════════════════════════ */
-function Step3({ wiz }: { wiz: WizState }) {
+const DOC_TYPE_LABELS: Record<DocumentType, string> = {
+  TERMS_CONDITIONS: "Terms & Conditions",
+  NDA: "NDA",
+  OTHER: "Other",
+};
+
+const BLANK_DOC: Omit<WizDocument, "id"> = {
+  name: "",
+  docType: "OTHER",
+  description: "",
+  visibleToSupplier: true,
+  fileName: "",
+};
+
+function Step3({ wiz, setWiz }: { wiz: WizState; setWiz: React.Dispatch<React.SetStateAction<WizState>> }) {
+  const [form, setForm] = useState<Omit<WizDocument, "id">>(BLANK_DOC);
+  const [adding, setAdding] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function openAdd() { setForm(BLANK_DOC); setAdding(true); }
+  function cancelAdd() { setAdding(false); setForm(BLANK_DOC); }
+
+  function confirmAdd() {
+    if (!form.name.trim() || !form.fileName) return;
+    const newDoc: WizDocument = { ...form, id: Date.now() };
+    setWiz(w => ({ ...w, documents: [...(w.documents ?? []), newDoc] }));
+    setAdding(false);
+    setForm(BLANK_DOC);
+  }
+
+  function removeDoc(id: number) {
+    setWiz(w => ({ ...w, documents: (w.documents ?? []).filter(d => d.id !== id) }));
+  }
+
+  const docs = wiz.documents ?? [];
+
   return (
     <div>
-      <StepHeader title="Documents" sub="Upload specifications, NDA, and terms & conditions for suppliers." />
-      <Card>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Field label="Technical specifications">
-            <Input type="file" className="cursor-pointer" />
-            <p className="text-[11px] text-slate-400 mt-1">Specs, drawings, or standards to be met.</p>
-          </Field>
-          <Field label="Terms & conditions">
-            <Input type="file" className="cursor-pointer" />
-          </Field>
-        </div>
-        {wiz.toggles.nda_required && (
-          <div className="mb-4">
-            <Field label="NDA template" required>
-              <Input type="file" className="cursor-pointer" />
-              <p className="text-[11px] text-slate-400 mt-1">Suppliers must acknowledge before accessing documents.</p>
+      <StepHeader title="Documents" sub="Attach specifications, NDA, terms & conditions, and other files for suppliers." />
+
+      {/* Add document form */}
+      {adding && (
+        <div className="mb-4 border border-slate-200 rounded-lg bg-white shadow-sm p-5">
+          <p className="text-[12px] font-semibold text-slate-700 mb-4">New Document</p>
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <Field label="Document name" required>
+              <Input
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Technical Specifications"
+                className="text-[13px]"
+              />
+            </Field>
+            <Field label="Document type" required>
+              <select
+                value={form.docType}
+                onChange={e => setForm(f => ({ ...f, docType: e.target.value as DocumentType }))}
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-[13px] text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {(Object.keys(DOC_TYPE_LABELS) as DocumentType[]).map(k => (
+                  <option key={k} value={k}>{DOC_TYPE_LABELS[k]}</option>
+                ))}
+              </select>
             </Field>
           </div>
+          <div className="mb-3">
+            <Field label="Description">
+              <Textarea
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Brief description of this document…"
+                className="text-[13px] resize-none"
+                rows={2}
+              />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Field label="File" required>
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f) setForm(prev => ({ ...prev, fileName: f.name }));
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 border border-dashed border-slate-300 rounded-md px-3 py-2 text-[12px] text-slate-500 hover:border-primary hover:text-primary transition-colors w-full"
+              >
+                <FileText size={13} />
+                {form.fileName ? form.fileName : "Choose file…"}
+              </button>
+            </Field>
+            <Field label="Visible to supplier">
+              <div className="flex items-center gap-2 h-9 mt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, visibleToSupplier: !f.visibleToSupplier }))}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-[12px] font-medium transition-colors",
+                    form.visibleToSupplier
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                      : "border-slate-200 bg-slate-50 text-slate-500"
+                  )}
+                >
+                  {form.visibleToSupplier ? <Eye size={13} /> : <EyeOff size={13} />}
+                  {form.visibleToSupplier ? "Visible" : "Hidden"}
+                </button>
+              </div>
+            </Field>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={confirmAdd}
+              disabled={!form.name.trim() || !form.fileName}
+              className="px-4 py-1.5 bg-primary text-white text-[12px] font-medium rounded-md disabled:opacity-40 hover:bg-primary/90 transition-colors"
+            >
+              Add document
+            </button>
+            <button onClick={cancelAdd} className="px-4 py-1.5 text-[12px] text-slate-500 hover:text-slate-700 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Documents list */}
+      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+          <p className="text-[12px] font-semibold text-slate-600">Attached documents ({docs.length})</p>
+        </div>
+        {docs.length === 0 ? (
+          <div className="py-12 text-center text-[12px] text-slate-400">
+            No documents added yet. Click "Add document" to attach files.
+          </div>
+        ) : (
+          <table className="w-full text-[12px]">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/40">
+                <th className="text-left px-4 py-2.5 font-semibold text-slate-500 w-[220px]">Name</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-slate-500 w-[140px]">Type</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-slate-500">Description</th>
+                <th className="text-center px-4 py-2.5 font-semibold text-slate-500 w-[110px]">Supplier view</th>
+                <th className="text-center px-4 py-2.5 font-semibold text-slate-500 w-[100px]">File</th>
+                <th className="w-10" />
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map((doc, i) => (
+                <tr key={doc.id} className={cn("border-b border-slate-100 last:border-0", i % 2 === 0 ? "bg-white" : "bg-slate-50/30")}>
+                  <td className="px-4 py-3 font-medium text-slate-700">{doc.name}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      "inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium",
+                      doc.docType === "NDA" && "bg-amber-50 text-amber-700 border border-amber-200",
+                      doc.docType === "TERMS_CONDITIONS" && "bg-blue-50 text-blue-700 border border-blue-200",
+                      doc.docType === "OTHER" && "bg-slate-100 text-slate-600 border border-slate-200",
+                    )}>
+                      {DOC_TYPE_LABELS[doc.docType]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-500 max-w-[240px] truncate">{doc.description || <span className="text-slate-300">—</span>}</td>
+                  <td className="px-4 py-3 text-center">
+                    {doc.visibleToSupplier ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-600"><Eye size={12} /> Yes</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-slate-400"><EyeOff size={12} /> No</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      title={doc.fileName}
+                      className="inline-flex items-center gap-1 text-primary hover:underline text-[11px]"
+                    >
+                      <Download size={12} />
+                      Download
+                    </button>
+                  </td>
+                  <td className="px-2 py-3 text-center">
+                    <button onClick={() => removeDoc(doc.id)} className="text-slate-300 hover:text-red-400 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-        <Field label="Additional documents">
-          <Input type="file" multiple className="cursor-pointer" />
-        </Field>
-      </Card>
+        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50">
+          <button
+            onClick={openAdd}
+            disabled={adding}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-40"
+          >
+            <Plus size={14} /> Add document
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

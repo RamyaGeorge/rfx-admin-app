@@ -208,6 +208,7 @@ export default function Home() {
                 sections={DEFAULT_WIZ_STATE.sections}
                 items={DEFAULT_WIZ_STATE.items}
                 participants={DEFAULT_WIZ_STATE.participants}
+                documents={DEFAULT_WIZ_STATE.documents}
                 onBack={() => navigate("events")}
                 onViewResponses={() => navigate("responses")}
               />

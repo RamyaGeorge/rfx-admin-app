@@ -7,6 +7,7 @@ import type {
   WizState,
   WizSection,
   WizItem,
+  WizDocument,
 } from "./rfx-types";
 
 export const EVENTS_LIST: RFXEvent[] = [
@@ -494,6 +495,11 @@ export const DEFAULT_WIZ_STATE: WizState = {
     bid_bond_required: true,
     site_visit_required: false,
   },
+  documents: [
+    { id: 1, name: "Technical Specifications", docType: "OTHER", description: "Detailed specs and drawings for the scope of work.", visibleToSupplier: true, fileName: "tech-specs-v1.pdf" } as WizDocument,
+    { id: 2, name: "Non-Disclosure Agreement", docType: "NDA", description: "Suppliers must acknowledge before accessing bid documents.", visibleToSupplier: true, fileName: "NDA-2026.docx" } as WizDocument,
+    { id: 3, name: "Standard Terms & Conditions", docType: "TERMS_CONDITIONS", description: "Procurement terms applicable to all responses.", visibleToSupplier: true, fileName: "TnC-standard.pdf" } as WizDocument,
+  ],
   items: [
     { id: 1, item_code: "LT-BRASS-001", description: "Custom Brass Wall Sconce", quantity: "500", unit: "PCS", target_price: "1200.00", reserve_price: "", technical_spec: "Brass finish, E27, IP44", required_by: "2026-01-15" },
     { id: 2, item_code: "LT-LED-002", description: "LED Retrofit Bulb 10W E27", quantity: "2000", unit: "PCS", target_price: "180.00", reserve_price: "", technical_spec: "10W, E27 base, 4000K", required_by: "2026-01-20" },

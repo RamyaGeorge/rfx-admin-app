@@ -5,11 +5,17 @@ import { cn } from "@/lib/utils";
 import { TypeBadge, StatusBadge } from "./shared";
 import {
   ChevronLeft, FileText, List, Users, HelpCircle, ArrowRight,
-  CalendarClock, X, Check,
+  CalendarClock, X, Check, Paperclip, Download, Eye, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
-import type { ActiveEvent, SupplierResponse, WizSection, WizItem, WizParticipant } from "@/lib/rfx-types";
+import type { ActiveEvent, SupplierResponse, WizSection, WizItem, WizParticipant, WizDocument, DocumentType } from "@/lib/rfx-types";
+
+const DOC_TYPE_LABELS: Record<DocumentType, string> = {
+  TERMS_CONDITIONS: "Terms & Conditions",
+  NDA: "NDA",
+  OTHER: "Other",
+};
 
 interface EventPreviewViewProps {
   event: ActiveEvent;
@@ -17,17 +23,19 @@ interface EventPreviewViewProps {
   sections: WizSection[];
   items: WizItem[];
   participants: WizParticipant[];
+  documents: WizDocument[];
   onBack: () => void;
   onViewResponses: () => void;
 }
 
-type Tab = "overview" | "questionnaire" | "boq" | "participants";
+type Tab = "overview" | "questionnaire" | "boq" | "participants" | "documents";
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "overview",      label: "Overview",      icon: <FileText size={13} /> },
   { key: "questionnaire", label: "Questionnaire",  icon: <HelpCircle size={13} /> },
   { key: "boq",           label: "Bid Matrix",     icon: <List size={13} /> },
   { key: "participants",  label: "Suppliers",      icon: <Users size={13} /> },
+  { key: "documents",     label: "Documents",      icon: <Paperclip size={13} /> },
 ];
 
 const QTYPE_LABELS: Record<string, string> = {
@@ -235,7 +243,7 @@ function DeadlineExtensionModal({
   );
 }
 
-export function EventPreviewView({ event, responses, sections, items, participants, onBack, onViewResponses }: EventPreviewViewProps) {
+export function EventPreviewView({ event, responses, sections, items, participants, documents, onBack, onViewResponses }: EventPreviewViewProps) {
   const [tab, setTab] = useState<Tab>("overview");
   const [extOpen, setExtOpen] = useState(false);
   const [extendedDeadline, setExtendedDeadline] = useState<string | null>(null);
@@ -518,6 +526,57 @@ export function EventPreviewView({ event, responses, sections, items, participan
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── DOCUMENTS ── */}
+        {tab === "documents" && (
+          <div>
+            {documents.length === 0 ? (
+              <p className="text-[13px] text-slate-400">No documents attached to this event.</p>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-[12px]">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      {["Name", "Type", "Description", "Supplier view", "File"].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {documents.map((doc, i) => (
+                      <tr key={doc.id} className={cn("hover:bg-slate-50/50 transition-colors", i % 2 === 0 ? "bg-white" : "bg-slate-50/30")}>
+                        <td className="px-4 py-3 font-medium text-slate-800">{doc.name}</td>
+                        <td className="px-4 py-3">
+                          <span className={cn(
+                            "inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium",
+                            doc.docType === "NDA" && "bg-amber-50 text-amber-700 border border-amber-200",
+                            doc.docType === "TERMS_CONDITIONS" && "bg-blue-50 text-blue-700 border border-blue-200",
+                            doc.docType === "OTHER" && "bg-slate-100 text-slate-600 border border-slate-200",
+                          )}>
+                            {DOC_TYPE_LABELS[doc.docType]}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 max-w-[260px] truncate">{doc.description || <span className="text-slate-300">—</span>}</td>
+                        <td className="px-4 py-3">
+                          {doc.visibleToSupplier ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-600"><Eye size={12} /> Yes</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-slate-400"><EyeOff size={12} /> No</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button className="inline-flex items-center gap-1 text-primary hover:underline text-[11px]">
+                            <Download size={12} /> Download
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
